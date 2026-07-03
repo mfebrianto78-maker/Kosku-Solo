@@ -1473,62 +1473,19 @@
   <!-- ===== PROFIL ===== -->
   <div id="screen-profil" class="screen">
     <div class="profil-header">
-      <div class="profil-avatar">👤</div>
-      <div class="profil-name">Febrianto</div>
-      <div class="profil-email">febrianto@email.com • +62 812-3456-7890</div>
+      <div class="profil-avatar" id="profilAvatar">👤</div>
+      <div class="profil-name" id="profilName">-</div>
+      <div class="profil-email" id="profilEmail">-</div>
     </div>
     <div class="profil-body" style="flex:1;overflow-y:auto">
       <div style="margin-bottom:16px"></div>
-      <div class="profil-menu">
-        <div class="menu-item" onclick="showProfil()">
-          <div class="menu-item-icon">👤</div>
-          <div class="menu-item-label">Profil Saya</div>
-          <div class="menu-arrow">›</div>
-        </div>
-        <div class="menu-item" onclick="showFavorit()">
-          <div class="menu-item-icon">❤️</div>
-          <div class="menu-item-label">Favorit Saya</div>
-          <div class="menu-arrow">›</div>
-        </div>
-        <div class="menu-item" onclick="showRiwayat()">
-          <div class="menu-item-icon">📋</div>
-          <div class="menu-item-label">Riwayat Sewa</div>
-          <div class="menu-arrow">›</div>
-        </div>
-        <div class="menu-item" onclick="show('pembayaran-akun')">
-          <div class="menu-item-icon">💳</div>
-          <div class="menu-item-label">Pembayaran</div>
-          <div class="menu-arrow">›</div>
-        </div>
-        <div class="menu-item" onclick="show('pengaturan')">
-          <div class="menu-item-icon">⚙️</div>
-          <div class="menu-item-label">Pengaturan</div>
-          <div class="menu-arrow">›</div>
-        </div>
-        <div class="menu-item" onclick="showNotif()">
-          <div class="menu-item-icon">🔔</div>
-          <div class="menu-item-label">Notifikasi</div>
-          <div class="menu-arrow">›</div>
-        </div>
-        <div class="menu-item" onclick="show('bantuan')">
-          <div class="menu-item-icon">❓</div>
-          <div class="menu-item-label">Bantuan & FAQ</div>
-          <div class="menu-arrow">›</div>
-        </div>
-        <div class="menu-item danger" onclick="handleLogout()">
-          <div class="menu-item-icon">🚪</div>
-          <div class="menu-item-label">Keluar</div>
-          <div class="menu-arrow">›</div>
-        </div>
+      <div class="profil-menu" id="profilMenu">
+        <!-- Diisi dinamis oleh renderProfilMenu() -->
       </div>
       <div style="height:20px"></div>
     </div>
     <div class="bottom-nav" id="profilBottomNav">
-      <div class="nav-item" onclick="goToBeranda()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
-      <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
-      <div class="nav-item" onclick="showFavorit()"><div class="nav-icon">❤️</div><div class="nav-label">Favorit</div></div>
-      <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot">📋</div><div class="nav-label">Pesan</div></div>
-      <div class="nav-item active"><div class="nav-icon">👤</div><div class="nav-label" style="color:var(--orange)">Akun</div></div>
+      <!-- Diisi dinamis oleh renderProfilBottomNav() -->
     </div>
   </div>
 
@@ -2798,13 +2755,9 @@
     if (!currentUserProfile) return;
     const greetEl = document.querySelector('#screen-dashboard .dash-greeting h2');
     if (greetEl) greetEl.textContent = `Halo, ${currentUserProfile.nama_lengkap || 'Pengguna'} 👋`;
-    const profilNameEl = document.querySelector('#screen-profil .profil-name');
-    if (profilNameEl) profilNameEl.textContent = currentUserProfile.nama_lengkap || 'Pengguna';
-    const profilEmailEl = document.querySelector('#screen-profil .profil-email');
-    if (profilEmailEl) {
-      const contactInfo = currentUserProfile.no_hp ? currentUserProfile.no_hp : (currentUser ? currentUser.email : '');
-      profilEmailEl.textContent = contactInfo;
-    }
+    // Update owner greeting juga
+    const ownerGreetEl = document.querySelector('#screen-owner .owner-greet h2');
+    if (ownerGreetEl) ownerGreetEl.textContent = `Halo, ${currentUserProfile.nama_lengkap || 'Pemilik'} 👋`;
   }
 
   // Cek apakah ada session aktif (user sudah login sebelumnya) saat halaman dibuka
@@ -2842,6 +2795,7 @@
   function showRegister() { show('register'); }
   function showRole() { show('role'); }
   function showDashboard() { show('dashboard'); prevScreen = 'dashboard'; }
+
   // Navigasi "Beranda" pintar: arahkan ke dashboard sesuai role user yang sedang login
   function goToBeranda() {
     if (currentUserProfile && currentUserProfile.role === 'pemilik') {
@@ -2850,6 +2804,31 @@
       showDashboard();
     }
   }
+
+  // Navigasi pintar untuk semua tab bottom nav — selalu cek role dulu
+  function navBeranda() { goToBeranda(); }
+  function navCari() {
+    if (currentUserProfile && currentUserProfile.role === 'pemilik') {
+      showKelolaKos();
+    } else {
+      showSearch();
+    }
+  }
+  function navFavorit() {
+    if (currentUserProfile && currentUserProfile.role === 'pemilik') {
+      showBookingMasuk();
+    } else {
+      showFavorit();
+    }
+  }
+  function navPesan() {
+    if (currentUserProfile && currentUserProfile.role === 'pemilik') {
+      showKeuangan();
+    } else {
+      showChatList();
+    }
+  }
+
   function showSearch() { show('search', currentScreen); }
   function showDetail() { show('detail', currentScreen || 'search'); }
   function showMaps() { show('maps', 'detail'); }
@@ -2862,9 +2841,122 @@
   function showChatList() { show('chat-list'); }
   function goBackFromChat() { show(prevScreen); }
   function showFavorit() { show('favorit'); }
+
   function showProfil() {
     show('profil');
+    renderProfilHeader();
+    renderProfilMenu();
     renderProfilBottomNav();
+  }
+
+  // Render header profil dengan data asli dari currentUserProfile
+  function renderProfilHeader() {
+    const nameEl = document.getElementById('profilName');
+    const emailEl = document.getElementById('profilEmail');
+    const avatarEl = document.getElementById('profilAvatar');
+    if (!currentUserProfile) return;
+    if (nameEl) nameEl.textContent = currentUserProfile.nama_lengkap || 'Pengguna';
+    if (emailEl) {
+      const contact = currentUser ? currentUser.email : '';
+      const hp = currentUserProfile.no_hp || '';
+      emailEl.textContent = hp ? `${contact} • ${hp}` : contact;
+    }
+    if (avatarEl) {
+      avatarEl.textContent = currentUserProfile.role === 'pemilik' ? '🏠' : '👤';
+    }
+  }
+
+  // Render menu profil sesuai role
+  function renderProfilMenu() {
+    const menu = document.getElementById('profilMenu');
+    if (!menu) return;
+    const isPemilik = currentUserProfile && currentUserProfile.role === 'pemilik';
+
+    if (isPemilik) {
+      menu.innerHTML = `
+        <div class="menu-item" onclick="show('pengaturan')">
+          <div class="menu-item-icon">👤</div>
+          <div class="menu-item-label">Profil Saya</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="showKelolaKos()">
+          <div class="menu-item-icon">🏠</div>
+          <div class="menu-item-label">Kelola Kos</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="showBookingMasuk()">
+          <div class="menu-item-icon">📋</div>
+          <div class="menu-item-label">Booking Masuk</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="showKeuangan()">
+          <div class="menu-item-icon">💰</div>
+          <div class="menu-item-label">Laporan Keuangan</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="show('pengaturan')">
+          <div class="menu-item-icon">⚙️</div>
+          <div class="menu-item-label">Pengaturan</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="showNotif()">
+          <div class="menu-item-icon">🔔</div>
+          <div class="menu-item-label">Notifikasi</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="show('bantuan')">
+          <div class="menu-item-icon">❓</div>
+          <div class="menu-item-label">Bantuan & FAQ</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item danger" onclick="handleLogout()">
+          <div class="menu-item-icon">🚪</div>
+          <div class="menu-item-label">Keluar</div>
+          <div class="menu-arrow">›</div>
+        </div>`;
+    } else {
+      menu.innerHTML = `
+        <div class="menu-item" onclick="show('pengaturan')">
+          <div class="menu-item-icon">👤</div>
+          <div class="menu-item-label">Profil Saya</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="showFavorit()">
+          <div class="menu-item-icon">❤️</div>
+          <div class="menu-item-label">Favorit Saya</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="showRiwayat()">
+          <div class="menu-item-icon">📋</div>
+          <div class="menu-item-label">Riwayat Sewa</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="show('pembayaran-akun')">
+          <div class="menu-item-icon">💳</div>
+          <div class="menu-item-label">Pembayaran</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="show('pengaturan')">
+          <div class="menu-item-icon">⚙️</div>
+          <div class="menu-item-label">Pengaturan</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="showNotif()">
+          <div class="menu-item-icon">🔔</div>
+          <div class="menu-item-label">Notifikasi</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="show('bantuan')">
+          <div class="menu-item-icon">❓</div>
+          <div class="menu-item-label">Bantuan & FAQ</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item danger" onclick="handleLogout()">
+          <div class="menu-item-icon">🚪</div>
+          <div class="menu-item-label">Keluar</div>
+          <div class="menu-arrow">›</div>
+        </div>`;
+    }
   }
 
   // Tampilkan bottom nav yang sesuai di halaman Profil, tergantung role user (pencari/pemilik)
@@ -2876,7 +2968,7 @@
     if (isPemilik) {
       nav.innerHTML = `
         <div class="nav-item" onclick="showOwner()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
-        <div class="nav-item" onclick="showBookingMasuk()"><div class="nav-icon nav-dot">📋</div><div class="nav-label">Booking</div></div>
+        <div class="nav-item" onclick="showBookingMasuk()"><div class="nav-icon">📋</div><div class="nav-label">Booking</div></div>
         <div class="nav-item" onclick="showKeuangan()"><div class="nav-icon">💰</div><div class="nav-label">Keuangan</div></div>
         <div class="nav-item" onclick="showChatList()"><div class="nav-icon">💬</div><div class="nav-label">Chat</div></div>
         <div class="nav-item active"><div class="nav-icon">👤</div><div class="nav-label" style="color:var(--orange)">Akun</div></div>`;
