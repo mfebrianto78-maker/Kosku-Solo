@@ -1526,7 +1526,7 @@
       <div style="background:linear-gradient(120deg,#FF7A00,#FF9A3C);border-radius:16px;padding:16px;color:white;display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:12px;opacity:0.8;margin-bottom:4px">Pendapatan Bulan Ini</div>
-          <div style="font-size:24px;font-weight:800">Rp 16.150.000</div>
+          <div style="font-size:24px;font-weight:800" id="ownerPendapatan">Rp 0</div>
         </div>
         <div style="font-size:12px;background:rgba(255,255,255,0.2);padding:6px 12px;border-radius:50px;cursor:pointer" onclick="showKeuangan()">📊 Detail</div>
       </div>
@@ -1597,7 +1597,7 @@
   <!-- ===== BOOKING MASUK OWNER ===== -->
   <div id="screen-booking-masuk" class="screen">
     <div class="top-bar" style="padding:52px 20px 14px;display:flex;align-items:center;gap:12px">
-      <span style="font-size:20px;cursor:pointer" onclick="showOwner()">←</span>
+      <span style="font-size:20px;cursor:pointer" onclick="show(prevScreen)">←</span>
       <h2 style="font-size:18px;font-weight:800">📋 Booking Masuk</h2>
     </div>
     <div style="padding:16px;flex:1;overflow-y:auto">
@@ -1812,31 +1812,53 @@
       <h2 style="font-size:18px;font-weight:800">⚙️ Pengaturan</h2>
     </div>
     <div style="flex:1;overflow-y:auto;padding:16px">
-      <div class="profil-menu">
-        <div class="menu-item">
-          <div class="menu-item-icon">👤</div>
-          <div style="flex:1">
-            <div class="menu-item-label">Edit Profil</div>
-            <div style="font-size:12px;color:var(--text-3)">Ubah nama, foto, dan info pribadi</div>
-          </div>
-          <div class="menu-arrow">›</div>
+
+      <!-- Edit Profil -->
+      <div class="form-card" style="margin-bottom:14px">
+        <h3>👤 Edit Profil</h3>
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap</label>
+          <input class="form-input" id="settingNama" placeholder="Nama lengkap">
         </div>
-        <div class="menu-item">
-          <div class="menu-item-icon">🔒</div>
-          <div style="flex:1">
-            <div class="menu-item-label">Ganti Password</div>
-            <div style="font-size:12px;color:var(--text-3)">Perbarui password akun Anda</div>
-          </div>
-          <div class="menu-arrow">›</div>
+        <div class="form-group">
+          <label class="form-label">Nomor HP</label>
+          <input class="form-input" id="settingHp" type="tel" placeholder="08xx-xxxx-xxxx">
         </div>
+        <div id="settingProfilMsg" style="font-size:13px;margin-bottom:10px;display:none"></div>
+        <button class="btn-primary" id="settingProfilBtn" onclick="handleUpdateProfil()">💾 Simpan Perubahan</button>
+      </div>
+
+      <!-- Ganti Password -->
+      <div class="form-card" style="margin-bottom:14px">
+        <h3>🔒 Ganti Password</h3>
+        <div class="form-group">
+          <label class="form-label">Password Baru</label>
+          <div style="position:relative">
+            <input class="form-input" id="settingPassword" type="password" placeholder="Min. 6 karakter" style="padding-right:48px">
+            <span onclick="togglePassword('settingPassword',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:var(--text-3)">👁️</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Konfirmasi Password Baru</label>
+          <div style="position:relative">
+            <input class="form-input" id="settingPasswordConfirm" type="password" placeholder="Ulangi password baru" style="padding-right:48px">
+            <span onclick="togglePassword('settingPasswordConfirm',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:var(--text-3)">👁️</span>
+          </div>
+        </div>
+        <div id="settingPasswordMsg" style="font-size:13px;margin-bottom:10px;display:none"></div>
+        <button class="btn-primary" id="settingPasswordBtn" onclick="handleUpdatePassword()">🔒 Ganti Password</button>
+      </div>
+
+      <!-- Notifikasi Toggle -->
+      <div class="profil-menu" style="margin-bottom:14px">
         <div class="menu-item">
           <div class="menu-item-icon">🔔</div>
           <div style="flex:1">
             <div class="menu-item-label">Notifikasi</div>
-            <div style="font-size:12px;color:var(--text-3)">Atur preferensi notifikasi</div>
+            <div style="font-size:12px;color:var(--text-3)">Aktifkan notifikasi aplikasi</div>
           </div>
-          <div style="width:44px;height:24px;background:var(--orange);border-radius:50px;position:relative;cursor:pointer">
-            <div style="position:absolute;right:2px;top:2px;width:20px;height:20px;background:white;border-radius:50%"></div>
+          <div id="notifToggle" style="width:44px;height:24px;background:var(--orange);border-radius:50px;position:relative;cursor:pointer" onclick="toggleNotifSetting()">
+            <div id="notifToggleKnob" style="position:absolute;right:2px;top:2px;width:20px;height:20px;background:white;border-radius:50%;transition:all 0.2s"></div>
           </div>
         </div>
         <div class="menu-item">
@@ -1845,7 +1867,7 @@
             <div class="menu-item-label">Bahasa</div>
             <div style="font-size:12px;color:var(--text-3)">Bahasa Indonesia</div>
           </div>
-          <div class="menu-arrow">›</div>
+          <div style="font-size:12px;color:var(--text-3)">ID ›</div>
         </div>
         <div class="menu-item">
           <div class="menu-item-icon">🌙</div>
@@ -1853,7 +1875,7 @@
             <div class="menu-item-label">Mode Gelap</div>
             <div style="font-size:12px;color:var(--text-3)">Segera hadir</div>
           </div>
-          <div style="width:44px;height:24px;background:var(--border);border-radius:50px;position:relative;cursor:pointer">
+          <div style="width:44px;height:24px;background:var(--border);border-radius:50px;position:relative;">
             <div style="position:absolute;left:2px;top:2px;width:20px;height:20px;background:white;border-radius:50%"></div>
           </div>
         </div>
@@ -2582,8 +2604,10 @@
       statCards[3].textContent = kamarKosong;
     }
 
-    const badge = document.querySelector('#screen-owner .owner-menu-badge');
-    // Update badge "Kelola Kos" dengan jumlah properti
+    // Reset nominal pendapatan ke Rp 0 (akan diupdate oleh loadKeuangan jika ada transaksi)
+    const pendEl = document.getElementById('ownerPendapatan');
+    if (pendEl) pendEl.textContent = 'Rp 0';
+
     const kelolaKosCard = Array.from(document.querySelectorAll('#screen-owner .owner-menu-card'))
       .find(c => c.textContent.includes('Kelola Kos'));
     if (kelolaKosCard) {
@@ -2874,7 +2898,7 @@
 
     if (isPemilik) {
       menu.innerHTML = `
-        <div class="menu-item" onclick="show('pengaturan')">
+        <div class="menu-item" onclick="showPengaturan()">
           <div class="menu-item-icon">👤</div>
           <div class="menu-item-label">Profil Saya</div>
           <div class="menu-arrow">›</div>
@@ -2894,7 +2918,7 @@
           <div class="menu-item-label">Laporan Keuangan</div>
           <div class="menu-arrow">›</div>
         </div>
-        <div class="menu-item" onclick="show('pengaturan')">
+        <div class="menu-item" onclick="showPengaturan()">
           <div class="menu-item-icon">⚙️</div>
           <div class="menu-item-label">Pengaturan</div>
           <div class="menu-arrow">›</div>
@@ -2916,7 +2940,7 @@
         </div>`;
     } else {
       menu.innerHTML = `
-        <div class="menu-item" onclick="show('pengaturan')">
+        <div class="menu-item" onclick="showPengaturan()">
           <div class="menu-item-icon">👤</div>
           <div class="menu-item-label">Profil Saya</div>
           <div class="menu-arrow">›</div>
@@ -2936,7 +2960,7 @@
           <div class="menu-item-label">Pembayaran</div>
           <div class="menu-arrow">›</div>
         </div>
-        <div class="menu-item" onclick="show('pengaturan')">
+        <div class="menu-item" onclick="showPengaturan()">
           <div class="menu-item-icon">⚙️</div>
           <div class="menu-item-label">Pengaturan</div>
           <div class="menu-arrow">›</div>
@@ -2982,8 +3006,8 @@
     }
   }
   function showOwner() { show('owner'); prevScreen = 'owner'; loadMyKos(); }
-  function showBookingMasuk() { show('booking-masuk', 'owner'); }
-  function showKeuangan() { show('keuangan', 'owner'); loadKeuangan(); }
+  function showBookingMasuk() { prevScreen = currentScreen; show('booking-masuk'); }
+  function showKeuangan() { prevScreen = currentScreen; show('keuangan'); loadKeuangan(); }
 
   async function loadKeuangan() {
     if (!currentUser) return;
@@ -3084,6 +3108,80 @@
   function toggleFasil(el) { el.classList.toggle('active'); }
 
   // Toggle show/hide password
+  // ===== PENGATURAN =====
+  let notifEnabled = true;
+
+  // Isi form pengaturan dengan data profil saat halaman dibuka
+  function showPengaturan() {
+    show('pengaturan', 'profil');
+    if (currentUserProfile) {
+      const namaEl = document.getElementById('settingNama');
+      const hpEl = document.getElementById('settingHp');
+      if (namaEl) namaEl.value = currentUserProfile.nama_lengkap || '';
+      if (hpEl) hpEl.value = currentUserProfile.no_hp || '';
+    }
+  }
+
+  // Update nama & HP profil ke Supabase
+  async function handleUpdateProfil() {
+    const nama = document.getElementById('settingNama').value.trim();
+    const hp = document.getElementById('settingHp').value.trim();
+    const msgEl = document.getElementById('settingProfilMsg');
+    const btn = document.getElementById('settingProfilBtn');
+    if (!nama) { showMsg(msgEl, 'Nama lengkap wajib diisi.', 'red'); return; }
+    btn.textContent = 'Menyimpan...'; btn.disabled = true;
+    try {
+      const { error } = await sbClient.from('profiles').update({ nama_lengkap: nama, no_hp: hp }).eq('id', currentUser.id);
+      if (error) throw error;
+      currentUserProfile.nama_lengkap = nama;
+      currentUserProfile.no_hp = hp;
+      applyProfileToUI();
+      showMsg(msgEl, '✅ Profil berhasil diperbarui!', 'green');
+    } catch (err) {
+      showMsg(msgEl, '❌ Gagal menyimpan: ' + (err.message || ''), 'red');
+    } finally {
+      btn.textContent = '💾 Simpan Perubahan'; btn.disabled = false;
+    }
+  }
+
+  // Ganti password lewat Supabase Auth
+  async function handleUpdatePassword() {
+    const pass = document.getElementById('settingPassword').value;
+    const confirm = document.getElementById('settingPasswordConfirm').value;
+    const msgEl = document.getElementById('settingPasswordMsg');
+    const btn = document.getElementById('settingPasswordBtn');
+    if (pass.length < 6) { showMsg(msgEl, 'Password minimal 6 karakter.', 'red'); return; }
+    if (pass !== confirm) { showMsg(msgEl, 'Konfirmasi password tidak sama.', 'red'); return; }
+    btn.textContent = 'Memproses...'; btn.disabled = true;
+    try {
+      const { error } = await sbClient.auth.updateUser({ password: pass });
+      if (error) throw error;
+      document.getElementById('settingPassword').value = '';
+      document.getElementById('settingPasswordConfirm').value = '';
+      showMsg(msgEl, '✅ Password berhasil diperbarui!', 'green');
+    } catch (err) {
+      showMsg(msgEl, '❌ Gagal ganti password: ' + (err.message || ''), 'red');
+    } finally {
+      btn.textContent = '🔒 Ganti Password'; btn.disabled = false;
+    }
+  }
+
+  function showMsg(el, msg, color) {
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = color === 'green' ? 'var(--green)' : 'var(--red)';
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+  }
+
+  function toggleNotifSetting() {
+    notifEnabled = !notifEnabled;
+    const toggle = document.getElementById('notifToggle');
+    const knob = document.getElementById('notifToggleKnob');
+    if (toggle) toggle.style.background = notifEnabled ? 'var(--orange)' : 'var(--border)';
+    if (knob) { knob.style.right = notifEnabled ? '2px' : 'auto'; knob.style.left = notifEnabled ? 'auto' : '2px'; }
+  }
+
   function togglePassword(inputId, iconEl) {
     const input = document.getElementById(inputId);
     if (input.type === 'password') {
