@@ -307,6 +307,12 @@
     font-size:12px; font-weight:600; color:var(--text-2); cursor:pointer; background:white;
   }
   .fasil-chip.active { background:var(--orange-light); border-color:var(--orange); color:var(--orange); }
+  .area-chip {
+    padding:8px 16px; border-radius:50px; font-size:13px; font-weight:600;
+    border:1.5px solid var(--border); background:white; color:var(--text-2);
+    cursor:pointer; transition:all 0.2s;
+  }
+  .area-chip.active { background:var(--orange); color:white; border-color:var(--orange); }
   .filter-actions { display:flex; gap:10px; padding: 0 16px 20px; }
   .btn-secondary {
     flex:1; padding:14px; border:2px solid var(--border); border-radius:12px;
@@ -938,13 +944,14 @@ window.addEventListener('appinstalled', function() {
     </div>
     <div class="dash-content">
       <div class="category-scroll">
-        <div class="cat-chip active">Semua</div>
-        <div class="cat-chip">Putra</div>
-        <div class="cat-chip">Putri</div>
-        <div class="cat-chip">Campur</div>
-        <div class="cat-chip">Eksklusif</div>
-        <div class="cat-chip">Harian</div>
-        <div class="cat-chip">Bulanan</div>
+        <div class="cat-chip active" onclick="filterDashboard(this,'')">Semua</div>
+        <div class="cat-chip" onclick="filterDashboard(this,'Putra')">Putra</div>
+        <div class="cat-chip" onclick="filterDashboard(this,'Putri')">Putri</div>
+        <div class="cat-chip" onclick="filterDashboard(this,'Campur')">Campur</div>
+        <div class="cat-chip" onclick="filterDashboard(this,'Eksklusif')">Eksklusif</div>
+        <div class="cat-chip" onclick="gotoAreaSearch('Kartosuro')">Kartosuro</div>
+        <div class="cat-chip" onclick="gotoAreaSearch('Jebres')">Jebres</div>
+        <div class="cat-chip" onclick="gotoAreaSearch('Banjarsari')">Banjarsari</div>
       </div>
 
       <div class="banner-promo">
@@ -998,38 +1005,91 @@ window.addEventListener('appinstalled', function() {
       </div>
       <div class="search-box" style="margin-bottom:14px;border:1.5px solid var(--border)">
         <span>🔍</span>
-        <input type="text" placeholder="Cari lokasi, nama kos, atau fasilitas..." id="searchInput">
+        <input type="text" placeholder="Cari nama kos, alamat..." id="searchInput" oninput="filterKosBySearch()">
         <span style="cursor:pointer" onclick="toggleFilter()">🔧</span>
       </div>
-      <div class="filter-bar">
-        <div class="filter-chip active">🏠 Semua</div>
-        <div class="filter-chip">Putri</div>
-        <div class="filter-chip">Putra</div>
-        <div class="filter-chip">Campur</div>
-        <div class="filter-chip">Eksklusif</div>
+
+      <!-- Tab: Jenis Kos | Area -->
+      <div style="display:flex;border-bottom:2px solid var(--border);margin:0 -20px;padding:0 20px">
+        <div id="tabJenis" onclick="switchSearchTab('jenis')" style="flex:1;text-align:center;padding:10px 0;font-size:13px;font-weight:700;color:var(--orange);border-bottom:2px solid var(--orange);margin-bottom:-2px;cursor:pointer">Jenis Kos</div>
+        <div id="tabArea" onclick="switchSearchTab('area')" style="flex:1;text-align:center;padding:10px 0;font-size:13px;font-weight:700;color:var(--text-3);cursor:pointer">📍 Cari per Area</div>
+      </div>
+
+      <!-- Panel Jenis Kos -->
+      <div id="panelJenis" style="padding-top:12px">
+        <div class="filter-bar">
+          <div class="filter-chip active" onclick="filterByJenis(this,'')">🏠 Semua</div>
+          <div class="filter-chip" onclick="filterByJenis(this,'Putri')">Putri</div>
+          <div class="filter-chip" onclick="filterByJenis(this,'Putra')">Putra</div>
+          <div class="filter-chip" onclick="filterByJenis(this,'Campur')">Campur</div>
+          <div class="filter-chip" onclick="filterByJenis(this,'Eksklusif')">Eksklusif</div>
+        </div>
+      </div>
+
+      <!-- Panel Area -->
+      <div id="panelArea" style="display:none;padding-top:12px">
+        <!-- Tab area kategori -->
+        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px" class="filter-bar">
+          <div class="filter-chip active" id="areaCatAll" onclick="switchAreaCat('semua')">Semua</div>
+          <div class="filter-chip" id="areaCatKampus" onclick="switchAreaCat('kampus')">🎓 Kampus</div>
+          <div class="filter-chip" id="areaCatKec" onclick="switchAreaCat('kecamatan')">🏘️ Kecamatan</div>
+          <div class="filter-chip" id="areaCatSoloraya" onclick="switchAreaCat('soloraya')">🌏 Soloraya</div>
+        </div>
+
+        <!-- Kampus -->
+        <div id="areaKampus" style="margin-top:10px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">🎓 Dekat Kampus</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <div class="area-chip" onclick="filterByArea(this,'UIN Surakarta')">UIN</div>
+            <div class="area-chip" onclick="filterByArea(this,'UMS')">UMS</div>
+            <div class="area-chip" onclick="filterByArea(this,'UNS')">UNS</div>
+            <div class="area-chip" onclick="filterByArea(this,'UTP')">UTP</div>
+            <div class="area-chip" onclick="filterByArea(this,'UNIBA')">UNIBA</div>
+            <div class="area-chip" onclick="filterByArea(this,'UNISRI')">UNISRI</div>
+          </div>
+        </div>
+
+        <!-- Kecamatan -->
+        <div id="areaKecamatan" style="margin-top:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">🏘️ Kecamatan Solo</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <div class="area-chip" onclick="filterByArea(this,'Pasar Kliwon')">Pasar Kliwon</div>
+            <div class="area-chip" onclick="filterByArea(this,'Jebres')">Jebres</div>
+            <div class="area-chip" onclick="filterByArea(this,'Serengan')">Serengan</div>
+            <div class="area-chip" onclick="filterByArea(this,'Laweyan')">Laweyan</div>
+            <div class="area-chip" onclick="filterByArea(this,'Banjarsari')">Banjarsari</div>
+          </div>
+        </div>
+
+        <!-- Soloraya -->
+        <div id="areaSoloraya" style="margin-top:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">🌏 Soloraya</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <div class="area-chip" onclick="filterByArea(this,'Kartosuro')">Kartosuro</div>
+            <div class="area-chip" onclick="filterByArea(this,'Palur')">Palur</div>
+            <div class="area-chip" onclick="filterByArea(this,'Colomadu')">Colomadu</div>
+            <div class="area-chip" onclick="filterByArea(this,'Solobaru')">Solobaru</div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div id="filterPanel" style="display:none">
       <div class="filter-panel">
         <div class="filter-section">
-          <h4>📍 Lokasi</h4>
-          <input class="form-input" placeholder="Solo, Jawa Tengah" style="margin-bottom:10px">
-        </div>
-        <div class="filter-section">
           <h4>💰 Rentang Harga</h4>
           <div class="price-range">
-            <input class="price-input" placeholder="Rp 300.000">
+            <input class="price-input" id="filterHargaMin" placeholder="Rp 300.000" type="number">
             <span style="color:var(--text-3)">–</span>
-            <input class="price-input" placeholder="Rp 2.000.000+">
+            <input class="price-input" id="filterHargaMax" placeholder="Rp 2.000.000" type="number">
           </div>
         </div>
         <div class="filter-section">
           <h4>🛋️ Fasilitas</h4>
-          <div class="fasilitas-grid">
-            <div class="fasil-chip active" onclick="toggleFasil(this)">WiFi</div>
+          <div class="fasilitas-grid" id="filterFasilitasGrid">
+            <div class="fasil-chip" onclick="toggleFasil(this)">WiFi</div>
             <div class="fasil-chip" onclick="toggleFasil(this)">AC</div>
-            <div class="fasil-chip active" onclick="toggleFasil(this)">KM Dalam</div>
+            <div class="fasil-chip" onclick="toggleFasil(this)">KM Dalam</div>
             <div class="fasil-chip" onclick="toggleFasil(this)">Laundry</div>
             <div class="fasil-chip" onclick="toggleFasil(this)">Parkir Motor</div>
             <div class="fasil-chip" onclick="toggleFasil(this)">Parkir Mobil</div>
@@ -1038,8 +1098,8 @@ window.addEventListener('appinstalled', function() {
           </div>
         </div>
         <div class="filter-actions">
-          <button class="btn-secondary" onclick="toggleFilter()">Reset</button>
-          <button class="btn-primary btn-primary-flex" onclick="toggleFilter()">Terapkan Filter</button>
+          <button class="btn-secondary" onclick="resetAllFilter()">Reset</button>
+          <button class="btn-primary btn-primary-flex" onclick="applyFilter()">Terapkan Filter</button>
         </div>
       </div>
     </div>
@@ -2101,17 +2161,9 @@ window.addEventListener('appinstalled', function() {
           : '<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:13px">Belum ada data kos.</div>';
       }
 
-      // Render ke halaman Search
-      const searchList = document.getElementById('searchResultsList');
-      if (searchList) {
-        searchList.innerHTML = allKosData.length
-          ? allKosData.map(renderKosListCard).join('')
-          : '<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:13px">Belum ada data kos.</div>';
-      }
-      const resultsCount = document.getElementById('resultsCount');
-      if (resultsCount) {
-        resultsCount.innerHTML = `Ditemukan <strong>${allKosData.length} kos</strong> di Solo`;
-      }
+      // Render ke halaman Search lewat filter engine
+      renderFilteredKos();
+
     } catch (err) {
       console.error('Gagal memuat data kos:', err);
       const dashGrid = document.getElementById('dashboardKosGrid');
@@ -3149,7 +3201,10 @@ window.addEventListener('appinstalled', function() {
     }
   }
 
-  function showSearch() { show('search', currentScreen); }
+  function showSearch() {
+    show('search', currentScreen);
+    renderFilteredKos();
+  }
   function showDetail() { show('detail', currentScreen || 'search'); }
   function showMaps() { show('maps', 'detail'); }
   function openGoogleMaps() {
@@ -3422,9 +3477,211 @@ window.addEventListener('appinstalled', function() {
   }
 
   // Filter toggle
+  // Filter dari dashboard - langsung ke halaman search dengan filter jenis
+  function filterDashboard(el, jenis) {
+    document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    activeJenis = jenis;
+    activeArea = '';
+    showSearch();
+    // Set filter chip di halaman search juga
+    setTimeout(() => {
+      const chips = document.querySelectorAll('#panelJenis .filter-chip');
+      chips.forEach(c => {
+        const match = (!jenis && c.textContent.includes('Semua')) ||
+                      (jenis && c.textContent.trim() === jenis);
+        c.classList.toggle('active', match);
+      });
+    }, 100);
+  }
+
+  // Langsung ke halaman search dengan filter area tertentu
+  function gotoAreaSearch(area) {
+    activeArea = area;
+    activeJenis = '';
+    showSearch();
+    // Switch ke tab Area dan aktifkan chip yang sesuai
+    setTimeout(() => {
+      switchSearchTab('area');
+      document.querySelectorAll('.area-chip').forEach(c => {
+        if (c.textContent.trim() === area) c.classList.add('active');
+        else c.classList.remove('active');
+      });
+    }, 100);
+  }
+  let activeJenis = '';      // filter jenis kos
+  let activeArea = '';       // filter area (kampus/kecamatan/soloraya)
+  let activeSearchText = ''; // filter teks pencarian
+  let filterHargaMin = 0;
+  let filterHargaMax = 0;
+  let filterFasilitas = [];
+
+  // Switch tab Jenis / Area
+  function switchSearchTab(tab) {
+    const tabJenis = document.getElementById('tabJenis');
+    const tabArea = document.getElementById('tabArea');
+    const panelJenis = document.getElementById('panelJenis');
+    const panelArea = document.getElementById('panelArea');
+    if (tab === 'jenis') {
+      tabJenis.style.color = 'var(--orange)';
+      tabJenis.style.borderBottom = '2px solid var(--orange)';
+      tabArea.style.color = 'var(--text-3)';
+      tabArea.style.borderBottom = 'none';
+      panelJenis.style.display = 'block';
+      panelArea.style.display = 'none';
+    } else {
+      tabArea.style.color = 'var(--orange)';
+      tabArea.style.borderBottom = '2px solid var(--orange)';
+      tabJenis.style.color = 'var(--text-3)';
+      tabJenis.style.borderBottom = 'none';
+      panelArea.style.display = 'block';
+      panelJenis.style.display = 'none';
+    }
+  }
+
+  // Switch sub-kategori area (semua/kampus/kecamatan/soloraya)
+  function switchAreaCat(cat) {
+    ['areaCatAll','areaCatKampus','areaCatKec','areaCatSoloraya'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    });
+    const catMap = { semua:'areaCatAll', kampus:'areaCatKampus', kecamatan:'areaCatKec', soloraya:'areaCatSoloraya' };
+    const active = document.getElementById(catMap[cat]);
+    if (active) active.classList.add('active');
+
+    // Tampilkan/sembunyikan grup area
+    const showKampus = cat === 'semua' || cat === 'kampus';
+    const showKec = cat === 'semua' || cat === 'kecamatan';
+    const showSoloraya = cat === 'semua' || cat === 'soloraya';
+    document.getElementById('areaKampus').style.display = showKampus ? 'block' : 'none';
+    document.getElementById('areaKecamatan').style.display = showKec ? 'block' : 'none';
+    document.getElementById('areaSoloraya').style.display = showSoloraya ? 'block' : 'none';
+  }
+
+  // Filter berdasarkan area yang dipilih
+  function filterByArea(el, area) {
+    // Toggle aktif
+    const allChips = document.querySelectorAll('.area-chip');
+    const wasActive = el.classList.contains('active');
+    allChips.forEach(c => c.classList.remove('active'));
+    if (!wasActive) {
+      el.classList.add('active');
+      activeArea = area;
+    } else {
+      activeArea = '';
+    }
+    renderFilteredKos();
+  }
+
+  // Filter berdasarkan jenis kos
+  function filterByJenis(el, jenis) {
+    document.querySelectorAll('#panelJenis .filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    activeJenis = jenis;
+    renderFilteredKos();
+  }
+
+  // Filter berdasarkan teks pencarian
+  function filterKosBySearch() {
+    activeSearchText = document.getElementById('searchInput').value.toLowerCase();
+    renderFilteredKos();
+  }
+
+  // Toggle filter panel harga & fasilitas
   function toggleFilter() {
     const p = document.getElementById('filterPanel');
     p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  }
+
+  // Terapkan filter harga & fasilitas
+  function applyFilter() {
+    const minEl = document.getElementById('filterHargaMin');
+    const maxEl = document.getElementById('filterHargaMax');
+    filterHargaMin = minEl ? parseFloat(minEl.value) || 0 : 0;
+    filterHargaMax = maxEl ? parseFloat(maxEl.value) || 0 : 0;
+    filterFasilitas = Array.from(document.querySelectorAll('#filterFasilitasGrid .fasil-chip.active'))
+      .map(c => c.textContent.trim());
+    toggleFilter();
+    renderFilteredKos();
+  }
+
+  // Reset semua filter
+  function resetAllFilter() {
+    activeJenis = '';
+    activeArea = '';
+    activeSearchText = '';
+    filterHargaMin = 0;
+    filterHargaMax = 0;
+    filterFasilitas = [];
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('#filterFasilitasGrid .fasil-chip').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.area-chip').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#panelJenis .filter-chip').forEach((c, i) => c.classList.toggle('active', i===0));
+    toggleFilter();
+    renderFilteredKos();
+  }
+
+  // Render daftar kos berdasarkan semua filter aktif
+  function renderFilteredKos() {
+    let hasil = allKosData;
+
+    // Filter teks
+    if (activeSearchText) {
+      hasil = hasil.filter(k =>
+        k.nama_kos.toLowerCase().includes(activeSearchText) ||
+        k.alamat.toLowerCase().includes(activeSearchText) ||
+        (k.deskripsi || '').toLowerCase().includes(activeSearchText)
+      );
+    }
+
+    // Filter jenis kos
+    if (activeJenis) {
+      hasil = hasil.filter(k => k.jenis_kos === activeJenis);
+    }
+
+    // Filter area (cari di alamat kos)
+    if (activeArea) {
+      hasil = hasil.filter(k =>
+        k.alamat.toLowerCase().includes(activeArea.toLowerCase()) ||
+        (k.deskripsi || '').toLowerCase().includes(activeArea.toLowerCase())
+      );
+    }
+
+    // Filter harga
+    if (filterHargaMin > 0) hasil = hasil.filter(k => k.harga_per_bulan >= filterHargaMin);
+    if (filterHargaMax > 0) hasil = hasil.filter(k => k.harga_per_bulan <= filterHargaMax);
+
+    // Filter fasilitas
+    if (filterFasilitas.length > 0) {
+      hasil = hasil.filter(k =>
+        filterFasilitas.every(f => (k.fasilitas || []).includes(f))
+      );
+    }
+
+    // Render ke list
+    const listEl = document.getElementById('searchResultsList');
+    const countEl = document.getElementById('resultsCount');
+
+    if (countEl) {
+      let label = `Ditemukan <strong>${hasil.length} kos</strong>`;
+      if (activeArea) label += ` di area <strong>${activeArea}</strong>`;
+      else if (activeJenis) label += ` jenis <strong>${activeJenis}</strong>`;
+      else label += ' di Solo';
+      countEl.innerHTML = label;
+    }
+
+    if (listEl) {
+      if (!hasil.length) {
+        listEl.innerHTML = `
+          <div style="text-align:center;padding:40px 20px;color:var(--text-3)">
+            <div style="font-size:40px;margin-bottom:10px">🔍</div>
+            <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">Kos Tidak Ditemukan</div>
+            <div style="font-size:13px">Coba ubah filter atau kata kunci pencarian</div>
+          </div>`;
+      } else {
+        listEl.innerHTML = hasil.map(renderKosListCard).join('');
+      }
+    }
   }
 
   // Fasil toggle
