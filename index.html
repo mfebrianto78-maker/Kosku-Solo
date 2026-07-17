@@ -1160,7 +1160,7 @@ window.addEventListener('appinstalled', function() {
         </div>
 
         <div class="detail-owner">
-          <div class="owner-avatar">👩</div>
+          <div class="owner-avatar" id="detailOwnerAvatar" style="overflow:hidden">👩</div>
           <div>
             <div class="owner-name" id="detailOwnerName">Memuat...</div>
             <div class="owner-role">Pemilik Kos</div>
@@ -1539,9 +1539,14 @@ window.addEventListener('appinstalled', function() {
   <!-- ===== PROFIL ===== -->
   <div id="screen-profil" class="screen">
     <div class="profil-header">
-      <div class="profil-avatar" id="profilAvatar">👤</div>
+      <div style="position:relative;width:80px;height:80px;margin:0 auto 14px">
+        <div id="profilAvatar" style="width:80px;height:80px;border-radius:24px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:36px;color:white;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.15)">👤</div>
+        <div onclick="document.getElementById('avatarInput').click()" style="position:absolute;bottom:-4px;right:-4px;width:28px;height:28px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2);font-size:13px;border:2px solid white">✏️</div>
+        <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="handleAvatarChange(this)">
+      </div>
       <div class="profil-name" id="profilName">-</div>
       <div class="profil-email" id="profilEmail">-</div>
+      <div id="avatarUploadMsg" style="font-size:12px;margin-top:6px;display:none;color:white"></div>
     </div>
     <div class="profil-body" style="flex:1;overflow-y:auto">
       <div style="margin-bottom:16px"></div>
@@ -1633,21 +1638,9 @@ window.addEventListener('appinstalled', function() {
     </div>
 
     <div style="padding:0 16px 8px;font-size:17px;font-weight:800;color:var(--text);margin-top:4px">Pemesanan Terbaru</div>
-    <div style="padding:0 16px 30px">
-      <div style="background:white;border-radius:16px;padding:14px;box-shadow:var(--shadow)">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <div style="width:40px;height:40px;background:linear-gradient(135deg,#E0E7FF,#C7D2FE);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px">👤</div>
-          <div style="flex:1">
-            <div style="font-size:14px;font-weight:700;color:var(--text)">Budi Santoso</div>
-            <div style="font-size:11px;color:var(--text-3)">Kamar 101 • 12 Nov - 12 Des 2024</div>
-          </div>
-          <div style="font-size:11px;color:var(--green);background:#DCFCE7;padding:4px 10px;border-radius:50px;font-weight:700">Menunggu</div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn-terima">✓ Terima</button>
-          <button class="btn-tolak">✗ Tolak</button>
-          <button class="btn-chat-req" onclick="showChat()">💬 Chat</button>
-        </div>
+    <div style="padding:0 16px 30px" id="ownerRecentBooking">
+      <div style="background:white;border-radius:16px;padding:20px;text-align:center;color:var(--text-3);font-size:13px;box-shadow:var(--shadow)">
+        Memuat pemesanan...
       </div>
     </div>
 
@@ -1666,48 +1659,10 @@ window.addEventListener('appinstalled', function() {
       <span style="font-size:20px;cursor:pointer" onclick="show(prevScreen)">←</span>
       <h2 style="font-size:18px;font-weight:800">📋 Booking Masuk</h2>
     </div>
-    <div style="padding:16px;flex:1;overflow-y:auto">
-      <div class="booking-req-card">
-        <div class="booking-req-head">
-          <div class="req-avatar">👤</div>
-          <div>
-            <div class="req-name">Budi Santoso</div>
-            <div class="req-time">2 jam yang lalu • Kos A</div>
-          </div>
-          <div style="margin-left:auto;background:#FEF9C3;color:#CA8A04;font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px">Baru</div>
-        </div>
-        <div class="req-info">
-          <div class="req-info-item"><p>Kamar</p><span>101</span></div>
-          <div class="req-info-item"><p>Durasi</p><span>12 Bulan</span></div>
-          <div class="req-info-item"><p>Mulai</p><span>12 Nov 2024</span></div>
-          <div class="req-info-item"><p>Total</p><span style="color:var(--orange)">Rp 10.550.000</span></div>
-        </div>
-        <div class="req-actions">
-          <button class="btn-terima">✓ Terima</button>
-          <button class="btn-tolak">✗ Tolak</button>
-          <button class="btn-chat-req" onclick="showChat()">💬</button>
-        </div>
-      </div>
-      <div class="booking-req-card">
-        <div class="booking-req-head">
-          <div class="req-avatar">👤</div>
-          <div>
-            <div class="req-name">Dewi Lestari</div>
-            <div class="req-time">5 jam yang lalu • Kos B</div>
-          </div>
-          <div style="margin-left:auto;background:#FEF9C3;color:#CA8A04;font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px">Baru</div>
-        </div>
-        <div class="req-info">
-          <div class="req-info-item"><p>Kamar</p><span>209</span></div>
-          <div class="req-info-item"><p>Durasi</p><span>6 Bulan</span></div>
-          <div class="req-info-item"><p>Mulai</p><span>11 Mei 2006</span></div>
-          <div class="req-info-item"><p>Total</p><span style="color:var(--orange)">Rp 5.350.000</span></div>
-        </div>
-        <div class="req-actions">
-          <button class="btn-terima">✓ Terima</button>
-          <button class="btn-tolak">✗ Tolak</button>
-          <button class="btn-chat-req" onclick="showChat()">💬</button>
-        </div>
+    <div style="padding:16px;flex:1;overflow-y:auto" id="bookingMasukList">
+      <div style="text-align:center;padding:40px 20px;color:var(--text-3)">
+        <div style="font-size:40px;margin-bottom:10px">📋</div>
+        <div style="font-size:14px;font-weight:600">Memuat data booking...</div>
       </div>
     </div>
   </div>
@@ -2140,17 +2095,25 @@ window.addEventListener('appinstalled', function() {
       if (error) throw error;
       allKosData = data || [];
 
-      // Ambil nama-nama pemilik secara terpisah (aman, tidak mengganggu data kos utama jika gagal)
+      // Ambil nama & foto pemilik secara terpisah
       try {
         const ownerIds = [...new Set(allKosData.map(k => k.owner_id).filter(Boolean))];
         if (ownerIds.length) {
-          const { data: owners } = await sbClient.from('profiles').select('id, nama_lengkap').in('id', ownerIds);
+          const { data: owners } = await sbClient
+            .from('profiles')
+            .select('id, nama_lengkap, foto_url')
+            .in('id', ownerIds);
           const ownerMap = {};
-          (owners || []).forEach(o => { ownerMap[o.id] = o.nama_lengkap; });
-          allKosData.forEach(k => { k.owner_nama = ownerMap[k.owner_id] || 'Pemilik Kos'; });
+          (owners || []).forEach(o => {
+            ownerMap[o.id] = { nama: o.nama_lengkap, foto: o.foto_url };
+          });
+          allKosData.forEach(k => {
+            k.owner_nama = (ownerMap[k.owner_id] && ownerMap[k.owner_id].nama) || 'Pemilik Kos';
+            k.owner_foto = (ownerMap[k.owner_id] && ownerMap[k.owner_id].foto) || null;
+          });
         }
       } catch (ownerErr) {
-        console.error('Gagal memuat nama pemilik:', ownerErr);
+        console.error('Gagal memuat data pemilik:', ownerErr);
       }
 
       // Render ke Dashboard (ambil 4 teratas sebagai rekomendasi)
@@ -2218,12 +2181,37 @@ window.addEventListener('appinstalled', function() {
       fasilGrid.innerHTML = kos.fasilitas.map(f => `<div class="fasil-tag">✨ ${f}</div>`).join('');
     }
 
-    // Nama pemilik kos
+    // Nama & foto pemilik kos
     const ownerName = kos.owner_nama || 'Pemilik Kos';
+    const ownerFoto = kos.owner_foto || null;
+
     const ownerNameEl = document.getElementById('detailOwnerName');
     if (ownerNameEl) ownerNameEl.textContent = ownerName;
+
+    // Update avatar pemilik di Detail Kos
+    const ownerAvatarEl = document.getElementById('detailOwnerAvatar');
+    if (ownerAvatarEl) {
+      if (ownerFoto) {
+        ownerAvatarEl.innerHTML = `<img src="${ownerFoto}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`;
+        ownerAvatarEl.style.background = 'transparent';
+      } else {
+        ownerAvatarEl.innerHTML = '👩';
+        ownerAvatarEl.style.background = 'var(--orange)';
+      }
+    }
+
     const chatNameEl = document.querySelector('#screen-chat .chat-name');
     if (chatNameEl) chatNameEl.textContent = ownerName;
+
+    // Update avatar pemilik di Chat juga
+    const chatAvatarEl = document.querySelector('#screen-chat .chat-avatar');
+    if (chatAvatarEl) {
+      if (ownerFoto) {
+        chatAvatarEl.innerHTML = `<img src="${ownerFoto}" style="width:100%;height:100%;object-fit:cover;border-radius:13px">`;
+      } else {
+        chatAvatarEl.innerHTML = '👩';
+      }
+    }
 
     // Render peta Leaflet di halaman detail jika ada koordinat
     setTimeout(() => {
@@ -2926,8 +2914,83 @@ window.addEventListener('appinstalled', function() {
       if (error) throw error;
       myKosData = data || [];
       renderOwnerStats();
+      loadRecentBookingDashboard(); // load pemesanan terbaru
     } catch (err) {
       console.error('Gagal memuat kos milik owner:', err);
+    }
+  }
+
+  // Load 1-2 pemesanan terbaru untuk dashboard owner (dengan foto penyewa)
+  async function loadRecentBookingDashboard() {
+    const container = document.getElementById('ownerRecentBooking');
+    if (!container || !myKosData.length) return;
+
+    try {
+      const kosIds = myKosData.map(k => k.id);
+      const { data: bookings, error } = await sbClient
+        .from('booking')
+        .select('*, kamar(nomor_kamar), kos(nama_kos)')
+        .in('kos_id', kosIds)
+        .eq('status', 'menunggu')
+        .order('created_at', { ascending: false })
+        .limit(2);
+
+      if (error) throw error;
+
+      if (!bookings || !bookings.length) {
+        container.innerHTML = `
+          <div style="background:white;border-radius:16px;padding:20px;text-align:center;color:var(--text-3);font-size:13px;box-shadow:var(--shadow)">
+            Belum ada pemesanan baru
+          </div>`;
+        return;
+      }
+
+      // Ambil foto profil penyewa
+      const penyewaIds = [...new Set(bookings.map(b => b.penyewa_id).filter(Boolean))];
+      const profileMap = {};
+      if (penyewaIds.length) {
+        const { data: profiles } = await sbClient
+          .from('profiles')
+          .select('id, nama_lengkap, foto_url')
+          .in('id', penyewaIds);
+        (profiles || []).forEach(p => { profileMap[p.id] = p; });
+      }
+
+      container.innerHTML = bookings.map(b => {
+        const profile = profileMap[b.penyewa_id] || {};
+        const nama = profile.nama_lengkap || b.nama_pemesan || 'Penyewa';
+        const foto = profile.foto_url;
+        const avatarHTML = foto
+          ? `<img src="${foto}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`
+          : '👤';
+        const avatarBg = foto ? 'transparent' : 'linear-gradient(135deg,#E0E7FF,#C7D2FE)';
+        const namaKos = b.kos ? b.kos.nama_kos : '-';
+        const nomorKamar = b.kamar ? b.kamar.nomor_kamar : '-';
+
+        return `
+          <div style="background:white;border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <div style="width:44px;height:44px;background:${avatarBg};border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0">${avatarHTML}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:700;color:var(--text)">${nama}</div>
+                <div style="font-size:11px;color:var(--text-3)">${namaKos} • Kamar ${nomorKamar}</div>
+              </div>
+              <div style="font-size:11px;color:#CA8A04;background:#FEF9C3;padding:4px 10px;border-radius:50px;font-weight:700;flex-shrink:0">Menunggu</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-terima" onclick="updateStatusBooking('${b.id}','diterima');loadRecentBookingDashboard()">✓ Terima</button>
+              <button class="btn-tolak" onclick="updateStatusBooking('${b.id}','ditolak');loadRecentBookingDashboard()">✗ Tolak</button>
+              <button class="btn-chat-req" onclick="showChat()">💬 Chat</button>
+            </div>
+          </div>`;
+      }).join('') + `
+        <div style="text-align:center;margin-top:8px">
+          <span onclick="showBookingMasuk()" style="font-size:13px;font-weight:600;color:var(--orange);cursor:pointer">Lihat Semua Booking →</span>
+        </div>`;
+
+    } catch (err) {
+      console.error('Gagal memuat recent booking:', err);
+      container.innerHTML = '<div style="background:white;border-radius:16px;padding:16px;text-align:center;color:var(--text-3);font-size:13px">Belum ada pemesanan</div>';
     }
   }
 
@@ -3264,7 +3327,12 @@ window.addEventListener('appinstalled', function() {
       emailEl.textContent = hp ? `${contact} • ${hp}` : contact;
     }
     if (avatarEl) {
-      avatarEl.textContent = currentUserProfile.role === 'pemilik' ? '🏠' : '👤';
+      if (currentUserProfile.foto_url) {
+        avatarEl.innerHTML = `<img src="${currentUserProfile.foto_url}" style="width:100%;height:100%;object-fit:cover">`;
+      } else {
+        avatarEl.innerHTML = currentUserProfile.role === 'pemilik' ? '🏠' : '👤';
+        avatarEl.style.fontSize = '36px';
+      }
     }
   }
 
@@ -3384,7 +3452,116 @@ window.addEventListener('appinstalled', function() {
     }
   }
   function showOwner() { show('owner'); prevScreen = 'owner'; loadMyKos(); }
-  function showBookingMasuk() { prevScreen = currentScreen; show('booking-masuk'); }
+  function showBookingMasuk() {
+    prevScreen = currentScreen;
+    show('booking-masuk');
+    loadBookingMasuk();
+  }
+
+  async function loadBookingMasuk() {
+    if (!currentUser || !myKosData.length) return;
+    const container = document.getElementById('bookingMasukList');
+    if (!container) return;
+
+    try {
+      const kosIds = myKosData.map(k => k.id);
+
+      // Ambil booking masuk untuk semua kos milik owner ini
+      const { data: bookings, error } = await sbClient
+        .from('booking')
+        .select('*, kamar(nomor_kamar), kos(nama_kos)')
+        .in('kos_id', kosIds)
+        .in('status', ['menunggu', 'diterima'])
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (!bookings || !bookings.length) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:60px 20px;color:var(--text-3)">
+            <div style="font-size:48px;margin-bottom:12px">📋</div>
+            <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">Belum Ada Booking</div>
+            <div style="font-size:13px">Booking dari penyewa akan muncul di sini</div>
+          </div>`;
+        return;
+      }
+
+      // Ambil foto profil penyewa
+      const penyewaIds = [...new Set(bookings.map(b => b.penyewa_id).filter(Boolean))];
+      const profileMap = {};
+      if (penyewaIds.length) {
+        const { data: profiles } = await sbClient
+          .from('profiles')
+          .select('id, nama_lengkap, foto_url')
+          .in('id', penyewaIds);
+        (profiles || []).forEach(p => { profileMap[p.id] = p; });
+      }
+
+      container.innerHTML = bookings.map(b => {
+        const profile = profileMap[b.penyewa_id] || {};
+        const nama = profile.nama_lengkap || b.nama_pemesan || 'Penyewa';
+        const foto = profile.foto_url;
+        const avatarHTML = foto
+          ? `<img src="${foto}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`
+          : '👤';
+        const avatarBg = foto ? 'transparent' : 'linear-gradient(135deg,#E0E7FF,#C7D2FE)';
+
+        const tgl = new Date(b.created_at);
+        const now = new Date();
+        const diffH = Math.round((now - tgl) / 3600000);
+        const waktu = diffH < 1 ? 'Baru saja' : diffH < 24 ? `${diffH} jam lalu` : `${Math.round(diffH/24)} hari lalu`;
+
+        const statusBadge = b.status === 'menunggu'
+          ? '<div style="margin-left:auto;background:#FEF9C3;color:#CA8A04;font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px">Menunggu</div>'
+          : '<div style="margin-left:auto;background:#DCFCE7;color:#16A34A;font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px">Diterima</div>';
+
+        const namaKos = b.kos ? b.kos.nama_kos : '-';
+        const nomorKamar = b.kamar ? b.kamar.nomor_kamar : '-';
+
+        return `
+          <div class="booking-req-card">
+            <div class="booking-req-head">
+              <div class="req-avatar" style="background:${avatarBg};overflow:hidden">${avatarHTML}</div>
+              <div>
+                <div class="req-name">${nama}</div>
+                <div class="req-time">${waktu} • ${namaKos}</div>
+              </div>
+              ${statusBadge}
+            </div>
+            <div class="req-info">
+              <div class="req-info-item"><p>Kamar</p><span>${nomorKamar}</span></div>
+              <div class="req-info-item"><p>Durasi</p><span>${b.durasi_bulan} Bln</span></div>
+              <div class="req-info-item"><p>Mulai</p><span>${b.tanggal_masuk || '-'}</span></div>
+              <div class="req-info-item"><p>Total</p><span style="color:var(--orange)">${formatRupiah(b.total_bayar)}</span></div>
+            </div>
+            <div class="req-actions">
+              ${b.status === 'menunggu' ? `
+                <button class="btn-terima" onclick="updateStatusBooking('${b.id}','diterima')">✓ Terima</button>
+                <button class="btn-tolak" onclick="updateStatusBooking('${b.id}','ditolak')">✗ Tolak</button>
+              ` : ''}
+              <button class="btn-chat-req" onclick="showChat()">💬</button>
+            </div>
+          </div>`;
+      }).join('');
+
+    } catch (err) {
+      console.error('Gagal memuat booking masuk:', err);
+      container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--red);font-size:13px">Gagal memuat data booking</div>';
+    }
+  }
+
+  async function updateStatusBooking(bookingId, status) {
+    try {
+      const { error } = await sbClient
+        .from('booking')
+        .update({ status: status })
+        .eq('id', bookingId);
+      if (error) throw error;
+      loadBookingMasuk(); // refresh list
+    } catch (err) {
+      alert('Gagal update status booking: ' + (err.message || ''));
+    }
+  }
   function showKeuangan() { prevScreen = currentScreen; show('keuangan'); loadKeuangan(); }
 
   async function loadKeuangan() {
@@ -3688,6 +3865,84 @@ window.addEventListener('appinstalled', function() {
   function toggleFasil(el) { el.classList.toggle('active'); }
 
   // Toggle show/hide password
+  // ============================================
+  // FOTO PROFIL - Upload & Update
+  // ============================================
+  async function handleAvatarChange(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const msgEl = document.getElementById('avatarUploadMsg');
+
+    // Validasi ukuran max 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      if (msgEl) { msgEl.textContent = '❌ Ukuran foto max 5MB'; msgEl.style.display = 'block'; }
+      return;
+    }
+
+    if (msgEl) { msgEl.textContent = '⏳ Mengupload foto...'; msgEl.style.display = 'block'; }
+
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `${currentUser.id}/avatar.${ext}`;
+
+      // Upload ke Supabase Storage bucket avatars
+      const { error: uploadError } = await sbClient.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Ambil public URL
+      const { data: urlData } = sbClient.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Tambahkan cache buster supaya gambar langsung refresh
+      const fotoUrl = urlData.publicUrl + '?t=' + Date.now();
+
+      // Update kolom foto_url di tabel profiles
+      const { error: updateError } = await sbClient
+        .from('profiles')
+        .update({ foto_url: fotoUrl })
+        .eq('id', currentUser.id);
+
+      if (updateError) throw updateError;
+
+      // Update cache lokal
+      currentUserProfile.foto_url = fotoUrl;
+
+      // Update tampilan avatar di halaman Profil
+      renderProfilHeader();
+
+      // Update avatar di semua halaman yang menampilkan foto user
+      updateAvatarEverywhere(fotoUrl);
+
+      if (msgEl) {
+        msgEl.textContent = '✅ Foto profil berhasil diperbarui!';
+        setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
+      }
+    } catch (err) {
+      console.error('Gagal upload avatar:', err);
+      if (msgEl) {
+        msgEl.textContent = '❌ Gagal upload: ' + (err.message || '');
+        setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
+      }
+    }
+    input.value = ''; // reset input
+  }
+
+  // Update foto profil di semua halaman sekaligus
+  function updateAvatarEverywhere(fotoUrl) {
+    // 1. Avatar di halaman Profil (sudah dihandle renderProfilHeader)
+
+    // 2. Avatar di Dashboard Owner (greeting header)
+    const ownerAvatarEl = document.querySelector('#screen-owner .dash-icon-btn:last-child');
+    // tidak perlu karena pakai emoji
+
+    // 3. Reload allKosData supaya nama & foto pemilik di Detail Kos ikut update
+    loadKosData();
+  }
+
   // ===== PENGATURAN =====
   let notifEnabled = true;
 
