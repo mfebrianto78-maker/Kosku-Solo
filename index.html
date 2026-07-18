@@ -929,7 +929,6 @@ window.addEventListener('appinstalled', function() {
         <div class="dash-actions">
           <div class="dash-icon-btn" onclick="showNotif()">
             🔔
-            <span class="notif-badge">3</span>
           </div>
           <div class="dash-icon-btn" onclick="showProfil()">👤</div>
         </div>
@@ -1265,15 +1264,15 @@ window.addEventListener('appinstalled', function() {
   <!-- ===== STREET VIEW ===== -->
   <div id="screen-streetview" class="screen">
     <div class="sv-header">
-      <span style="font-size:20px;cursor:pointer;color:white" onclick="showMaps()">←</span>
+      <span style="font-size:20px;cursor:pointer;color:white" onclick="showDetail()">←</span>
       <div class="sv-title">Street View</div>
     </div>
     <div class="sv-container">
       <div class="sv-building">🏠</div>
       <div class="sv-road"></div>
       <div class="sv-label-box">
-        <p>Solo, Jawa Tengah</p>
-        <h4>Kos Griya Kartini</h4>
+        <p id="svKotaLabel">Solo, Jawa Tengah</p>
+        <h4 id="svNamaKos">-</h4>
       </div>
       <div class="sv-controls">
         <div class="sv-btn">▲</div>
@@ -1284,12 +1283,17 @@ window.addEventListener('appinstalled', function() {
     <div class="sv-info">
       <div class="sv-info-card">
         <div class="sv-info-title">Kondisi Sekitar</div>
-        <div class="sv-info-list">
+        <div class="sv-info-list" id="svKondisiList">
           <div class="sv-info-item">✅ Jalan aspal kondisi baik</div>
           <div class="sv-info-item">✅ Lingkungan bersih dan aman</div>
           <div class="sv-info-item">✅ Akses kendaraan mudah</div>
           <div class="sv-info-item">✅ Dekat fasilitas umum</div>
         </div>
+      </div>
+      <div style="margin-top:12px">
+        <button onclick="openGoogleStreetView()" style="width:100%;padding:14px;background:var(--orange);border:none;border-radius:14px;color:white;font-size:14px;font-weight:700;cursor:pointer">
+          🗺️ Buka Google Street View
+        </button>
       </div>
     </div>
   </div>
@@ -1570,7 +1574,6 @@ window.addEventListener('appinstalled', function() {
         </div>
         <div class="dash-icon-btn" onclick="showNotif()">
           🔔
-          <span class="notif-badge">2</span>
         </div>
       </div>
       <div class="stats-grid">
@@ -3277,7 +3280,38 @@ window.addEventListener('appinstalled', function() {
       window.open(`https://www.google.com/maps/search/${encodeURIComponent(selectedKos.nama_kos + ' ' + selectedKos.alamat)}`, '_blank');
     }
   }
-  function showStreetView() { show('streetview', 'maps'); }
+  function showStreetView() {
+    show('streetview', 'detail');
+
+    // Update nama kos sesuai yang dipilih
+    const namaEl = document.getElementById('svNamaKos');
+    const kotaEl = document.getElementById('svKotaLabel');
+    if (selectedKos) {
+      if (namaEl) namaEl.textContent = selectedKos.nama_kos;
+      // Ambil kota dari alamat (biasanya format "...Solo" atau "...Jawa Tengah")
+      if (kotaEl) {
+        const alamat = selectedKos.alamat || '';
+        const parts = alamat.split(',');
+        const kota = parts.length >= 2 ? parts.slice(-2).join(',').trim() : 'Solo, Jawa Tengah';
+        kotaEl.textContent = kota;
+      }
+    }
+  }
+
+  // Buka Google Street View asli di browser untuk lokasi kos
+  function openGoogleStreetView() {
+    if (selectedKos && selectedKos.latitude && selectedKos.longitude) {
+      window.open(
+        `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${selectedKos.latitude},${selectedKos.longitude}`,
+        '_blank'
+      );
+    } else if (selectedKos) {
+      window.open(
+        `https://www.google.com/maps/search/${encodeURIComponent(selectedKos.nama_kos + ' ' + selectedKos.alamat)}`,
+        '_blank'
+      );
+    }
+  }
   function showBooking() { show('booking', 'detail'); }
   function showPayment() { show('payment', 'booking'); }
   function showSuccess() { show('success'); }
