@@ -3318,10 +3318,14 @@ window.addEventListener('appinstalled', function() {
   function showSuccess() { show('success'); }
   function showRiwayat() { show('riwayat'); }
   function goBackFromChat() {
-    // Unsubscribe realtime saat keluar dari chat
+    // Unsubscribe realtime dan hentikan polling saat keluar dari chat
     if (chatRealtimeChannel) {
       sbClient.removeChannel(chatRealtimeChannel);
       chatRealtimeChannel = null;
+    }
+    if (chatPollingInterval) {
+      clearInterval(chatPollingInterval);
+      chatPollingInterval = null;
     }
     show(prevScreen);
   }
@@ -4180,6 +4184,8 @@ window.addEventListener('appinstalled', function() {
 
       container.innerHTML = '';
       messages.forEach(msg => appendMessageBubble(msg));
+      // Simpan timestamp pesan terakhir untuk polling
+      lastMessageTimestamp = messages[messages.length - 1].created_at;
       container.scrollTop = container.scrollHeight;
     } catch (err) {
       console.error('Gagal load chat:', err);
@@ -4230,16 +4236,28 @@ window.addEventListener('appinstalled', function() {
   }
 
   // Subscribe ke Supabase Realtime untuk pesan baru
+  let chatPollingInterval = null; // interval polling fallback
+  let lastMessageTimestamp = null; // timestamp pesan terakhir yang diterima
+
   function subscribeChatRealtime() {
     // Unsubscribe channel lama jika ada
     if (chatRealtimeChannel) {
       sbClient.removeChannel(chatRealtimeChannel);
       chatRealtimeChannel = null;
     }
+    // Hentikan polling lama
+    if (chatPollingInterval) {
+      clearInterval(chatPollingInterval);
+      chatPollingInterval = null;
+    }
     if (!currentChatKosId) return;
 
+    // Set timestamp terakhir sekarang
+    lastMessageTimestamp = new Date().toISOString();
+
+    // 1. Supabase Realtime — pesan masuk hampir instan
     chatRealtimeChannel = sbClient
-      .channel(`chat-${currentChatKosId}`)
+      .channel(`chat-${currentChatKosId}-${Date.now()}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -4247,13 +4265,42 @@ window.addEventListener('appinstalled', function() {
         filter: `kos_id=eq.${currentChatKosId}`
       }, (payload) => {
         const msg = payload.new;
-        // Hindari duplikasi — jangan append kalau pesan dari diri sendiri (sudah diappend optimistic)
+        // Hindari duplikasi
         const existing = document.querySelector(`[data-msg-id="${msg.id}"]`);
         if (!existing) {
           appendMessageBubble(msg);
+          lastMessageTimestamp = msg.created_at;
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime status:', status);
+      });
+
+    // 2. Polling fallback setiap 3 detik — backup kalau Realtime lambat
+    chatPollingInterval = setInterval(async () => {
+      // Hanya poll kalau halaman chat sedang aktif
+      if (currentScreen !== 'chat') return;
+      try {
+        const { data: newMsgs } = await sbClient
+          .from('chat_messages')
+          .select('*')
+          .eq('kos_id', currentChatKosId)
+          .gt('created_at', lastMessageTimestamp)
+          .order('created_at', { ascending: true });
+
+        if (newMsgs && newMsgs.length > 0) {
+          newMsgs.forEach(msg => {
+            const existing = document.querySelector(`[data-msg-id="${msg.id}"]`);
+            if (!existing) {
+              appendMessageBubble(msg);
+              lastMessageTimestamp = msg.created_at;
+            }
+          });
+        }
+      } catch (err) {
+        // Polling gagal — tidak masalah, Realtime tetap jalan
+      }
+    }, 3000);
   }
 
   // Kirim pesan ke Supabase
