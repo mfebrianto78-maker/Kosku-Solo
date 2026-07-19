@@ -1520,9 +1520,10 @@ window.addEventListener('appinstalled', function() {
   <div id="screen-chat" class="screen">
     <div class="chat-header">
       <span style="font-size:20px;cursor:pointer" onclick="goBackFromChat()">←</span>
+      <div class="chat-avatar" id="chatHeaderAvatar" style="border-radius:14px;overflow:hidden">👩</div>
       <div>
-        <div class="chat-name">Ibu Sari Utami</div>
-        <div class="chat-status">● Online</div>
+        <div class="chat-name" id="chatHeaderName">-</div>
+        <div class="chat-status" id="chatHeaderStatus">● Online</div>
       </div>
       <div style="margin-left:auto;font-size:20px">📞</div>
     </div>
@@ -1535,7 +1536,7 @@ window.addEventListener('appinstalled', function() {
     </div>
     <div class="chat-input-bar">
       <div style="font-size:20px;cursor:pointer">📎</div>
-      <textarea class="chat-input-box" placeholder="Ketik pesan..." rows="1" id="chatInput"></textarea>
+      <textarea class="chat-input-box" placeholder="Ketik pesan..." rows="1" id="chatInput" onkeydown="handleChatKeydown(event)"></textarea>
       <div class="chat-send-btn" onclick="sendMessage()">➤</div>
     </div>
   </div>
@@ -3316,29 +3317,14 @@ window.addEventListener('appinstalled', function() {
   function showPayment() { show('payment', 'booking'); }
   function showSuccess() { show('success'); }
   function showRiwayat() { show('riwayat'); }
-  function showChat() { show('chat', currentScreen); }
-  function showChatList() {
-    show('chat-list');
-    const nav = document.getElementById('chatListBottomNav');
-    if (!nav) return;
-    const isPemilik = currentUserProfile && currentUserProfile.role === 'pemilik';
-    if (isPemilik) {
-      nav.innerHTML = `
-        <div class="nav-item" onclick="showOwner()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
-        <div class="nav-item" onclick="showBookingMasuk()"><div class="nav-icon">📋</div><div class="nav-label">Booking</div></div>
-        <div class="nav-item" onclick="showKeuangan()"><div class="nav-icon">💰</div><div class="nav-label">Keuangan</div></div>
-        <div class="nav-item active"><div class="nav-icon">💬</div><div class="nav-label" style="color:var(--orange)">Chat</div></div>
-        <div class="nav-item" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label">Akun</div></div>`;
-    } else {
-      nav.innerHTML = `
-        <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
-        <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
-        <div class="nav-item" onclick="showFavorit()"><div class="nav-icon">❤️</div><div class="nav-label">Favorit</div></div>
-        <div class="nav-item active"><div class="nav-icon">💬</div><div class="nav-label" style="color:var(--orange)">Pesan</div></div>
-        <div class="nav-item" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label">Akun</div></div>`;
+  function goBackFromChat() {
+    // Unsubscribe realtime saat keluar dari chat
+    if (chatRealtimeChannel) {
+      sbClient.removeChannel(chatRealtimeChannel);
+      chatRealtimeChannel = null;
     }
+    show(prevScreen);
   }
-  function goBackFromChat() { show(prevScreen); }
   function showFavorit() { show('favorit'); }
 
   function showProfil() {
@@ -4135,27 +4121,338 @@ window.addEventListener('appinstalled', function() {
     el.classList.add('active');
   }
 
-  // Chat
-  function sendMessage() {
+  // ============================================
+  // CHAT REAL-TIME - Supabase Realtime
+  // ============================================
+  let chatRealtimeChannel = null; // channel Supabase Realtime aktif
+  let currentChatKosId = null;    // kos_id percakapan yang sedang dibuka
+  let currentChatPartnerId = null; // user_id lawan bicara
+
+  // Buka chat — dipanggil dari Detail Kos (pencari) atau Booking (pemilik)
+  async function showChat() {
+    show('chat', currentScreen);
+
+    // Update header chat dari selectedKos
+    if (selectedKos) {
+      currentChatKosId = selectedKos.id;
+      const ownerName = selectedKos.owner_nama || 'Pemilik Kos';
+      const ownerFoto = selectedKos.owner_foto || null;
+      const nameEl = document.getElementById('chatHeaderName');
+      const avatarEl = document.getElementById('chatHeaderAvatar');
+      if (nameEl) nameEl.textContent = ownerName;
+      if (avatarEl) {
+        avatarEl.innerHTML = ownerFoto
+          ? `<img src="${ownerFoto}" style="width:100%;height:100%;object-fit:cover">`
+          : '👩';
+      }
+      currentChatPartnerId = selectedKos.owner_id || null;
+    }
+
+    await loadChatMessages();
+    subscribeChatRealtime();
+  }
+
+  // Load pesan dari database
+  async function loadChatMessages() {
+    if (!currentChatKosId || !currentUser) return;
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+
+    try {
+      const { data: messages, error } = await sbClient
+        .from('chat_messages')
+        .select('*')
+        .eq('kos_id', currentChatKosId)
+        .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (!messages || !messages.length) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:40px 20px;color:var(--text-3)">
+            <div style="font-size:40px;margin-bottom:10px">💬</div>
+            <div style="font-size:14px;font-weight:600">Belum ada pesan</div>
+            <div style="font-size:12px;margin-top:4px">Mulai percakapan sekarang</div>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      messages.forEach(msg => appendMessageBubble(msg));
+      container.scrollTop = container.scrollHeight;
+    } catch (err) {
+      console.error('Gagal load chat:', err);
+    }
+  }
+
+  // Tambahkan bubble pesan ke container
+  function appendMessageBubble(msg) {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+
+    const isSelf = msg.sender_id === currentUser.id;
+    const time = new Date(msg.created_at);
+    const timeStr = `${time.getHours()}:${String(time.getMinutes()).padStart(2,'0')}`;
+
+    // Hapus empty state jika ada
+    const emptyEl = container.querySelector('div[style*="text-align:center"]');
+    if (emptyEl) emptyEl.remove();
+
+    const bubble = document.createElement('div');
+    bubble.className = `msg-bubble ${isSelf ? 'sent' : 'received'}`;
+    bubble.dataset.msgId = msg.id;
+
+    // Avatar pengirim (hanya untuk pesan masuk)
+    const avatarHtml = !isSelf ? `
+      <div style="width:28px;height:28px;border-radius:8px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;overflow:hidden;margin-right:6px">
+        ${msg.sender_foto ? `<img src="${msg.sender_foto}" style="width:100%;height:100%;object-fit:cover">` : '👤'}
+      </div>` : '';
+
+    const readReceipt = isSelf ? (msg.is_read ? ' ✓✓' : ' ✓') : '';
+
+    bubble.innerHTML = `
+      <div style="display:flex;align-items:flex-end;gap:4px">
+        ${!isSelf ? avatarHtml : ''}
+        <div>
+          ${!isSelf && msg.sender_nama ? `<div style="font-size:10px;color:var(--text-3);margin-bottom:2px">${msg.sender_nama}</div>` : ''}
+          <div class="bubble">${escapeHtml(msg.pesan)}</div>
+          <div class="msg-time">${timeStr}${readReceipt}</div>
+        </div>
+      </div>`;
+
+    container.appendChild(bubble);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Subscribe ke Supabase Realtime untuk pesan baru
+  function subscribeChatRealtime() {
+    // Unsubscribe channel lama jika ada
+    if (chatRealtimeChannel) {
+      sbClient.removeChannel(chatRealtimeChannel);
+      chatRealtimeChannel = null;
+    }
+    if (!currentChatKosId) return;
+
+    chatRealtimeChannel = sbClient
+      .channel(`chat-${currentChatKosId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+        filter: `kos_id=eq.${currentChatKosId}`
+      }, (payload) => {
+        const msg = payload.new;
+        // Hindari duplikasi — jangan append kalau pesan dari diri sendiri (sudah diappend optimistic)
+        const existing = document.querySelector(`[data-msg-id="${msg.id}"]`);
+        if (!existing) {
+          appendMessageBubble(msg);
+        }
+      })
+      .subscribe();
+  }
+
+  // Kirim pesan ke Supabase
+  async function sendMessage() {
     const input = document.getElementById('chatInput');
     const msg = input.value.trim();
-    if (!msg) return;
-    const container = document.getElementById('chatMessages');
-    const bubble = document.createElement('div');
-    bubble.className = 'msg-bubble sent';
-    const now = new Date();
-    bubble.innerHTML = `<div class="bubble">${msg}</div><div class="msg-time">${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} ✓✓</div>`;
-    container.appendChild(bubble);
+    if (!msg || !currentUser || !currentChatKosId) return;
+
     input.value = '';
-    container.scrollTop = container.scrollHeight;
-    // Auto-reply after 1.2s
-    setTimeout(() => {
-      const reply = document.createElement('div');
-      reply.className = 'msg-bubble received';
-      reply.innerHTML = `<div class="bubble">Baik, terima kasih sudah menghubungi kami! 😊</div><div class="msg-time">${now.getHours()}:${String(now.getMinutes()+1).padStart(2,'0')}</div>`;
-      container.appendChild(reply);
-      container.scrollTop = container.scrollHeight;
-    }, 1200);
+    input.style.height = 'auto';
+
+    // Tentukan receiver_id
+    let receiverId = currentChatPartnerId;
+    if (!receiverId && selectedKos) receiverId = selectedKos.owner_id;
+
+    // Optimistic UI — tampilkan pesan langsung sebelum konfirmasi server
+    const tempMsg = {
+      id: 'temp-' + Date.now(),
+      sender_id: currentUser.id,
+      receiver_id: receiverId,
+      kos_id: currentChatKosId,
+      pesan: msg,
+      is_read: false,
+      sender_nama: currentUserProfile ? currentUserProfile.nama_lengkap : '',
+      sender_foto: currentUserProfile ? currentUserProfile.foto_url : null,
+      created_at: new Date().toISOString()
+    };
+    appendMessageBubble(tempMsg);
+
+    try {
+      const { data, error } = await sbClient
+        .from('chat_messages')
+        .insert({
+          sender_id: currentUser.id,
+          receiver_id: receiverId,
+          kos_id: currentChatKosId,
+          pesan: msg,
+          is_read: false,
+          sender_nama: currentUserProfile ? currentUserProfile.nama_lengkap : '',
+          sender_foto: currentUserProfile ? currentUserProfile.foto_url : null
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Ganti id temp dengan id asli dari server
+      const tempEl = document.querySelector('[data-msg-id="' + tempMsg.id + '"]');
+      if (tempEl && data) {
+        tempEl.dataset.msgId = data.id;
+        // Update read receipt jadi ✓
+        const timeEl = tempEl.querySelector('.msg-time');
+        if (timeEl) {
+          const t = new Date(data.created_at);
+          timeEl.textContent = `${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')} ✓`;
+        }
+      }
+
+      // Update daftar chat
+      loadChatList();
+
+    } catch (err) {
+      console.error('Gagal kirim pesan:', err);
+      // Tandai pesan gagal
+      const tempEl = document.querySelector('[data-msg-id="' + tempMsg.id + '"]');
+      if (tempEl) {
+        const timeEl = tempEl.querySelector('.msg-time');
+        if (timeEl) timeEl.textContent += ' ❌';
+      }
+    }
+  }
+
+  // Enter untuk kirim (Shift+Enter untuk baris baru)
+  function handleChatKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  // Load daftar percakapan untuk halaman Chat List
+  async function loadChatList() {
+    if (!currentUser) return;
+    const container = document.getElementById('chatListContainer');
+    if (!container) return;
+
+    try {
+      // Ambil semua pesan terakhir per kos yang melibatkan user ini
+      const { data: messages, error } = await sbClient
+        .from('chat_messages')
+        .select('*')
+        .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (!messages || !messages.length) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:40px 20px;color:var(--text-3)">
+            <div style="font-size:40px;margin-bottom:10px">💬</div>
+            <div style="font-size:14px;font-weight:600">Belum Ada Percakapan</div>
+            <div style="font-size:12px;margin-top:4px">Percakapan dengan pemilik kos akan muncul di sini</div>
+          </div>`;
+        return;
+      }
+
+      // Group by kos_id, ambil pesan terakhir tiap kos
+      const chatMap = {};
+      messages.forEach(msg => {
+        if (!chatMap[msg.kos_id]) chatMap[msg.kos_id] = msg;
+      });
+
+      // Ambil data kos untuk tiap percakapan
+      const kosIds = Object.keys(chatMap).filter(Boolean);
+      let kosMap = {};
+      if (kosIds.length) {
+        const { data: kosList } = await sbClient
+          .from('kos').select('id, nama_kos').in('id', kosIds);
+        (kosList || []).forEach(k => { kosMap[k.id] = k; });
+      }
+
+      container.innerHTML = Object.values(chatMap).map(msg => {
+        const kos = kosMap[msg.kos_id] || {};
+        const isSelf = msg.sender_id === currentUser.id;
+        const namaChat = kos.nama_kos || 'Kos';
+        const preview = (isSelf ? 'Anda: ' : '') + (msg.pesan || '');
+        const time = new Date(msg.created_at);
+        const timeStr = `${time.getHours()}:${String(time.getMinutes()).padStart(2,'0')}`;
+        const unread = !msg.is_read && !isSelf;
+
+        return `
+          <div class="chat-list-item" onclick="openChatFromList('${msg.kos_id}')" style="${unread ? 'border-left:3px solid var(--orange)' : ''}">
+            <div class="chat-avatar" style="border-radius:14px;flex-shrink:0">🏠</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:14px;font-weight:${unread ? '800' : '700'};color:var(--text)">${namaChat}</div>
+                <div style="font-size:11px;color:var(--text-3)">${timeStr}</div>
+              </div>
+              <div style="font-size:12px;color:${unread ? 'var(--text)' : 'var(--text-3)'};margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:${unread ? '600' : '400'}">${preview}</div>
+            </div>
+            ${unread ? '<div style="width:8px;height:8px;background:var(--orange);border-radius:50%;flex-shrink:0"></div>' : ''}
+          </div>`;
+      }).join('');
+
+    } catch (err) {
+      console.error('Gagal load chat list:', err);
+    }
+  }
+
+  // Buka percakapan dari daftar chat
+  async function openChatFromList(kosId) {
+    // Cari data kos dari allKosData
+    const kos = allKosData.find(k => k.id === kosId);
+    if (kos) {
+      selectedKos = kos;
+      renderDetailScreen(kos);
+    }
+    currentChatKosId = kosId;
+
+    // Set header chat dari kos
+    if (kos) {
+      const nameEl = document.getElementById('chatHeaderName');
+      const avatarEl = document.getElementById('chatHeaderAvatar');
+      if (nameEl) nameEl.textContent = kos.owner_nama || kos.nama_kos || 'Chat';
+      if (avatarEl) {
+        avatarEl.innerHTML = kos.owner_foto
+          ? `<img src="${kos.owner_foto}" style="width:100%;height:100%;object-fit:cover">`
+          : '🏠';
+      }
+      currentChatPartnerId = kos.owner_id || null;
+    }
+
+    show('chat', 'chat-list');
+    await loadChatMessages();
+    subscribeChatRealtime();
+  }
+
+  // Override showChatList agar load data real
+  function showChatList() {
+    show('chat-list');
+    loadChatList();
+    const nav = document.getElementById('chatListBottomNav');
+    if (!nav) return;
+    const isPemilik = currentUserProfile && currentUserProfile.role === 'pemilik';
+    if (isPemilik) {
+      nav.innerHTML = `
+        <div class="nav-item" onclick="showOwner()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
+        <div class="nav-item" onclick="showBookingMasuk()"><div class="nav-icon">📋</div><div class="nav-label">Booking</div></div>
+        <div class="nav-item" onclick="showKeuangan()"><div class="nav-icon">💰</div><div class="nav-label">Keuangan</div></div>
+        <div class="nav-item active"><div class="nav-icon">💬</div><div class="nav-label" style="color:var(--orange)">Chat</div></div>
+        <div class="nav-item" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label">Akun</div></div>`;
+    } else {
+      nav.innerHTML = `
+        <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
+        <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
+        <div class="nav-item" onclick="showFavorit()"><div class="nav-icon">❤️</div><div class="nav-label">Favorit</div></div>
+        <div class="nav-item active"><div class="nav-icon">💬</div><div class="nav-label" style="color:var(--orange)">Pesan</div></div>
+        <div class="nav-item" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label">Akun</div></div>`;
+    }
   }
 
   // Category chips interaction
