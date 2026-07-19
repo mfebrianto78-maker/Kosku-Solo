@@ -4163,11 +4163,11 @@ window.addEventListener('appinstalled', function() {
     if (!container) return;
 
     try {
+      // Filter hanya berdasarkan kos_id — lebih sederhana dan pasti bekerja
       const { data: messages, error } = await sbClient
         .from('chat_messages')
         .select('*')
         .eq('kos_id', currentChatKosId)
-        .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -4179,12 +4179,12 @@ window.addEventListener('appinstalled', function() {
             <div style="font-size:14px;font-weight:600">Belum ada pesan</div>
             <div style="font-size:12px;margin-top:4px">Mulai percakapan sekarang</div>
           </div>`;
+        lastMessageTimestamp = new Date().toISOString();
         return;
       }
 
       container.innerHTML = '';
       messages.forEach(msg => appendMessageBubble(msg));
-      // Simpan timestamp pesan terakhir untuk polling
       lastMessageTimestamp = messages[messages.length - 1].created_at;
       container.scrollTop = container.scrollHeight;
     } catch (err) {
@@ -4276,9 +4276,8 @@ window.addEventListener('appinstalled', function() {
         console.log('Realtime status:', status);
       });
 
-    // 2. Polling fallback setiap 3 detik — backup kalau Realtime lambat
+    // 2. Polling fallback setiap 1.5 detik — backup kalau Realtime lambat
     chatPollingInterval = setInterval(async () => {
-      // Hanya poll kalau halaman chat sedang aktif
       if (currentScreen !== 'chat') return;
       try {
         const { data: newMsgs } = await sbClient
@@ -4300,7 +4299,7 @@ window.addEventListener('appinstalled', function() {
       } catch (err) {
         // Polling gagal — tidak masalah, Realtime tetap jalan
       }
-    }, 3000);
+    }, 1500);
   }
 
   // Kirim pesan ke Supabase
@@ -4335,17 +4334,20 @@ window.addEventListener('appinstalled', function() {
         .from('chat_messages')
         .insert({
           sender_id: currentUser.id,
-          receiver_id: receiverId,
+          receiver_id: receiverId || null,
           kos_id: currentChatKosId,
           pesan: msg,
           is_read: false,
           sender_nama: currentUserProfile ? currentUserProfile.nama_lengkap : '',
-          sender_foto: currentUserProfile ? currentUserProfile.foto_url : null
+          sender_foto: currentUserProfile ? (currentUserProfile.foto_url || null) : null
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Insert error detail:', JSON.stringify(error));
+        throw error;
+      }
 
       // Ganti id temp dengan id asli dari server
       const tempEl = document.querySelector('[data-msg-id="' + tempMsg.id + '"]');
