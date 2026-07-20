@@ -1830,9 +1830,13 @@ window.addEventListener('appinstalled', function() {
     </div>
   </div>
   <div id="screen-notif" class="screen">
-    <div class="top-bar" style="padding:52px 20px 14px;display:flex;align-items:center;gap:12px">
-      <span style="font-size:20px;cursor:pointer" id="notifBack">←</span>
-      <h2 style="font-size:18px;font-weight:800">🔔 Notifikasi</h2>
+    <div class="top-bar" style="padding:52px 20px 14px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:20px;cursor:pointer" onclick="showProfil()">←</span>
+        <h2 style="font-size:18px;font-weight:800">🔔 Notifikasi</h2>
+        <span id="notifBadgeCount" style="display:none;background:var(--orange);color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:50px"></span>
+      </div>
+      <span onclick="markAllNotifRead()" style="font-size:12px;color:var(--orange);font-weight:600;cursor:pointer">Tandai semua dibaca</span>
     </div>
     <div class="notif-list" style="flex:1;overflow-y:auto" id="notifList">
       <div style="text-align:center;padding:60px 20px;color:var(--text-3)">
@@ -2380,6 +2384,17 @@ window.addEventListener('appinstalled', function() {
       if (error) throw error;
 
       pendingBookingId = data.id;
+
+      // Kirim notifikasi ke pemilik kos
+      if (selectedKos && selectedKos.owner_id) {
+        await kirimNotifikasi(
+          selectedKos.owner_id,
+          '📋 Booking Baru!',
+          `${nama} ingin menyewa kamar di ${selectedKos.nama_kos}. Durasi: ${durasi} bulan. Total: ${formatRupiah(totalBayar)}`,
+          'booking'
+        );
+      }
+
       renderPaymentSummary(data, kamar);
       show('payment', 'booking');
     } catch (err) {
@@ -3153,6 +3168,19 @@ window.addEventListener('appinstalled', function() {
       } else {
         showDashboard();
       }
+      // Mulai polling notifikasi setelah login
+      startNotifPolling();
+      // Cek notif awal langsung
+      setTimeout(async () => {
+        try {
+          const { data } = await sbClient
+            .from('notifications')
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .eq('is_read', false);
+          updateNotifBadge(data ? data.length : 0);
+        } catch(e) {}
+      }, 1000);
     } catch (err) {
       console.error(err);
       let msg = err.message || 'Gagal login.';
@@ -3576,12 +3604,41 @@ window.addEventListener('appinstalled', function() {
 
   async function updateStatusBooking(bookingId, status) {
     try {
+      // Ambil data booking dulu untuk dapatkan penyewa_id dan nama kos
+      const { data: booking } = await sbClient
+        .from('booking')
+        .select('*, kos(nama_kos)')
+        .eq('id', bookingId)
+        .single();
+
       const { error } = await sbClient
         .from('booking')
         .update({ status: status })
         .eq('id', bookingId);
       if (error) throw error;
-      loadBookingMasuk(); // refresh list
+
+      // Kirim notifikasi ke penyewa
+      if (booking && booking.penyewa_id) {
+        const namaKos = booking.kos ? booking.kos.nama_kos : 'Kos';
+        if (status === 'diterima') {
+          await kirimNotifikasi(
+            booking.penyewa_id,
+            '✅ Booking Diterima!',
+            `Selamat! Booking Anda untuk ${namaKos} telah diterima oleh pemilik. Silakan lakukan pembayaran.`,
+            'booking'
+          );
+        } else if (status === 'ditolak') {
+          await kirimNotifikasi(
+            booking.penyewa_id,
+            '❌ Booking Ditolak',
+            `Maaf, booking Anda untuk ${namaKos} tidak dapat diterima saat ini. Silakan cari kos lain.`,
+            'booking'
+          );
+        }
+      }
+
+      loadBookingMasuk();
+      loadRecentBookingDashboard();
     } catch (err) {
       alert('Gagal update status booking: ' + (err.message || ''));
     }
@@ -3655,8 +3712,168 @@ window.addEventListener('appinstalled', function() {
     }
   }
   function showNotif() {
-    document.getElementById('notifBack').onclick = () => show(currentScreen === 'notif' ? prevScreen : currentScreen);
     show('notif', currentScreen);
+    loadNotifikasi();
+  }
+
+  // ============================================
+  // SISTEM NOTIFIKASI IN-APP
+  // ============================================
+  let notifPollingInterval = null;
+
+  // Load notifikasi dari database
+  async function loadNotifikasi() {
+    if (!currentUser) return;
+    const container = document.getElementById('notifList');
+    if (!container) return;
+
+    try {
+      const { data: notifs, error } = await sbClient
+        .from('notifications')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      if (!notifs || !notifs.length) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:60px 20px;color:var(--text-3)">
+            <div style="font-size:48px;margin-bottom:12px">🔔</div>
+            <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">Belum Ada Notifikasi</div>
+            <div style="font-size:13px">Notifikasi booking, pesan, dan info penting akan muncul di sini</div>
+          </div>`;
+        updateNotifBadge(0);
+        return;
+      }
+
+      const unreadCount = notifs.filter(n => !n.is_read).length;
+      updateNotifBadge(unreadCount);
+
+      container.innerHTML = notifs.map(n => {
+        const tgl = new Date(n.created_at);
+        const now = new Date();
+        const diffH = Math.round((now - tgl) / 3600000);
+        const waktu = diffH < 1 ? 'Baru saja'
+          : diffH < 24 ? `${diffH} jam lalu`
+          : diffH < 48 ? 'Kemarin'
+          : `${Math.round(diffH/24)} hari lalu`;
+
+        const icon = n.tipe === 'booking' ? '📋'
+          : n.tipe === 'chat' ? '💬'
+          : n.tipe === 'pembayaran' ? '💳'
+          : n.tipe === 'sistem' ? '⚙️' : '🔔';
+
+        const bgColor = !n.is_read ? 'background:var(--orange-light);border-left:3px solid var(--orange)' : 'background:white';
+
+        return `
+          <div onclick="readNotif('${n.id}')" style="${bgColor};padding:16px;margin-bottom:1px;cursor:pointer;transition:all 0.2s">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <div style="width:44px;height:44px;background:${!n.is_read ? 'var(--orange)' : 'var(--bg)'};border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${icon}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:${!n.is_read ? '700' : '600'};color:var(--text);margin-bottom:4px">${n.judul}</div>
+                <div style="font-size:13px;color:var(--text-2);line-height:1.5">${n.pesan}</div>
+                <div style="font-size:11px;color:var(--text-3);margin-top:6px">${waktu}</div>
+              </div>
+              ${!n.is_read ? '<div style="width:8px;height:8px;background:var(--orange);border-radius:50%;flex-shrink:0;margin-top:4px"></div>' : ''}
+            </div>
+          </div>`;
+      }).join('');
+
+    } catch (err) {
+      console.error('Gagal load notifikasi:', err);
+    }
+  }
+
+  // Update badge angka di ikon lonceng
+  function updateNotifBadge(count) {
+    // Badge di dashboard pencari
+    const dashBell = document.querySelector('#screen-dashboard .dash-icon-btn');
+    // Badge di dashboard owner
+    const ownerBell = document.querySelector('#screen-owner .dash-icon-btn');
+
+    // Update atau hapus badge
+    [dashBell, ownerBell].forEach(bell => {
+      if (!bell) return;
+      let badge = bell.querySelector('.notif-badge');
+      if (count > 0) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'notif-badge';
+          bell.appendChild(badge);
+        }
+        badge.textContent = count > 99 ? '99+' : count;
+      } else {
+        if (badge) badge.remove();
+      }
+    });
+
+    // Badge di header notif
+    const badgeCount = document.getElementById('notifBadgeCount');
+    if (badgeCount) {
+      if (count > 0) {
+        badgeCount.textContent = `${count} baru`;
+        badgeCount.style.display = 'inline';
+      } else {
+        badgeCount.style.display = 'none';
+      }
+    }
+  }
+
+  // Tandai satu notif sebagai sudah dibaca
+  async function readNotif(notifId) {
+    try {
+      await sbClient.from('notifications').update({ is_read: true }).eq('id', notifId);
+      loadNotifikasi(); // refresh list
+    } catch (err) {
+      console.error('Gagal update notif:', err);
+    }
+  }
+
+  // Tandai semua notif sebagai sudah dibaca
+  async function markAllNotifRead() {
+    if (!currentUser) return;
+    try {
+      await sbClient.from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', currentUser.id)
+        .eq('is_read', false);
+      loadNotifikasi();
+    } catch (err) {
+      console.error('Gagal tandai semua dibaca:', err);
+    }
+  }
+
+  // Kirim notifikasi ke user tertentu
+  async function kirimNotifikasi(userId, judul, pesan, tipe = 'info') {
+    try {
+      await sbClient.from('notifications').insert({
+        user_id: userId,
+        judul: judul,
+        pesan: pesan,
+        tipe: tipe,
+        is_read: false
+      });
+    } catch (err) {
+      console.error('Gagal kirim notif:', err);
+    }
+  }
+
+  // Cek notif baru setiap 30 detik (polling ringan)
+  function startNotifPolling() {
+    if (notifPollingInterval) clearInterval(notifPollingInterval);
+    notifPollingInterval = setInterval(async () => {
+      if (!currentUser) return;
+      try {
+        const { data } = await sbClient
+          .from('notifications')
+          .select('id', { count: 'exact' })
+          .eq('user_id', currentUser.id)
+          .eq('is_read', false);
+        updateNotifBadge(data ? data.length : 0);
+      } catch (err) { /* silent */ }
+    }, 30000); // 30 detik
   }
 
   // Onboarding
@@ -4347,6 +4564,16 @@ window.addEventListener('appinstalled', function() {
       if (error) {
         console.error('Insert error detail:', JSON.stringify(error));
         throw error;
+      }
+
+      // Kirim notif ke lawan bicara (receiver)
+      if (receiverId) {
+        await kirimNotifikasi(
+          receiverId,
+          '💬 Pesan Baru',
+          `${currentUserProfile ? currentUserProfile.nama_lengkap : 'Seseorang'}: ${msg.length > 50 ? msg.substring(0,50)+'...' : msg}`,
+          'chat'
+        );
       }
 
       // Ganti id temp dengan id asli dari server
