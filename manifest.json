@@ -31,8 +31,22 @@
   ],
   "categories": [
     "lifestyle",
-    "utilities"
+    "utilities",
+    "business"
   ],
   "lang": "id",
-  "dir": "ltr"
+  "dir": "ltr",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "id": "/",
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "edge_side_panel": {
+    "preferred_width": 480
+  }
 }
