@@ -772,7 +772,6 @@
 window.addEventListener('beforeinstallprompt', function(e) {
   e.preventDefault();
   window._pwaPrompt = e;
-  // Tampilkan tombol install di splash screen
   const btn = document.getElementById('pwaInstallBtn');
   if (btn) btn.style.display = 'flex';
 });
@@ -782,6 +781,19 @@ window.addEventListener('appinstalled', function() {
   if (btn) btn.style.display = 'none';
   window._pwaPrompt = null;
 });
+
+// Register Service Worker dari file terpisah
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js')
+      .then(function(reg) {
+        console.log('SW registered:', reg.scope);
+      })
+      .catch(function(err) {
+        console.log('SW error:', err);
+      });
+  });
+}
 
 function installPWA() {
   if (window._pwaPrompt) {
