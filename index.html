@@ -4441,6 +4441,25 @@ function installPWA() {
 
       if (error) throw error;
 
+      // Untuk pemilik kos: header chat harus tampilkan foto/nama PENCARI KOS
+      // (lawan bicara), bukan foto pemilik sendiri. Ambil dari pesan masuk terakhir.
+      const isPemilikView = currentUserProfile && currentUserProfile.role === 'pemilik';
+      if (isPemilikView && messages && messages.length) {
+        const pesanMasuk = messages.filter(m => m.sender_id !== currentUser.id);
+        const lawanBicara = pesanMasuk.length ? pesanMasuk[pesanMasuk.length - 1] : null;
+        if (lawanBicara) {
+          const nameEl = document.getElementById('chatHeaderName');
+          const avatarEl = document.getElementById('chatHeaderAvatar');
+          if (nameEl) nameEl.textContent = lawanBicara.sender_nama || 'Pencari Kos';
+          if (avatarEl) {
+            avatarEl.innerHTML = lawanBicara.sender_foto
+              ? `<img src="${lawanBicara.sender_foto}" style="width:100%;height:100%;object-fit:cover">`
+              : '🧑';
+          }
+          currentChatPartnerId = lawanBicara.sender_id;
+        }
+      }
+
       if (!messages || !messages.length) {
         container.innerHTML = `
           <div style="text-align:center;padding:40px 20px;color:var(--text-3)">
