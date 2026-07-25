@@ -1355,32 +1355,7 @@ function installPWA() {
     <div class="top-bar" style="padding:52px 20px 14px">
       <h2 style="font-size:20px;font-weight:800">❤️ Favorit Saya</h2>
     </div>
-    <div class="favorit-body" style="flex:1">
-      <div class="kos-list-card" onclick="showDetail()">
-        <div class="kos-list-img">🛏️</div>
-        <div class="kos-list-info">
-          <div class="kos-list-name">Kos Griya Kartini</div>
-          <div class="kos-list-addr">📍 Jl. Kartini No. 43, Banjarsari</div>
-          <div class="kos-list-price">Rp 850.000<span style="font-size:11px;color:var(--text-3);font-weight:400">/bln</span></div>
-          <div class="kos-list-footer">
-            <span style="font-size:12px;color:var(--text-3)">⭐ 4.8 • Putri</span>
-            <div style="font-size:12px;color:var(--red);font-weight:600;cursor:pointer">Hapus</div>
-          </div>
-        </div>
-      </div>
-      <div class="kos-list-card" onclick="showDetail()">
-        <div class="kos-list-img">🪑</div>
-        <div class="kos-list-info">
-          <div class="kos-list-name">Kos Mutiara Solo</div>
-          <div class="kos-list-addr">📍 Jl. Hasanudin No. 22</div>
-          <div class="kos-list-price">Rp 550.000<span style="font-size:11px;color:var(--text-3);font-weight:400">/bln</span></div>
-          <div class="kos-list-footer">
-            <span style="font-size:12px;color:var(--text-3)">⭐ 4.7 • Campur</span>
-            <div style="font-size:12px;color:var(--red);font-weight:600;cursor:pointer">Hapus</div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div class="favorit-body" style="flex:1"></div>
     <div class="bottom-nav">
       <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
       <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
@@ -2108,7 +2083,7 @@ function installPWA() {
         <div class="kos-card-img" style="position:relative">
           ${imgContent}
           <div class="kos-badge" style="background:${badgeColor};position:absolute;top:10px;left:10px">${kos.jenis_kos}</div>
-          <div class="fav-btn" onclick="event.stopPropagation()" style="position:absolute;top:10px;right:10px">🤍</div>
+          <div class="fav-btn" onclick="toggleFavorite('${kos.id}', event, this)" style="position:absolute;top:10px;right:10px">${favoritKosIds.has(kos.id) ? '❤️' : '🤍'}</div>
         </div>
         <div class="kos-card-body">
           <div class="kos-name">${kos.nama_kos}</div>
@@ -2137,7 +2112,7 @@ function installPWA() {
           <div class="kos-list-price">${formatRupiah(kos.harga_per_bulan)}<span style="font-size:11px;color:var(--text-3);font-weight:400">/bln</span></div>
           <div class="kos-list-footer">
             <span style="font-size:12px;color:var(--text-3)">⭐ ${kos.rating} (${kos.jumlah_review}) • ${kos.jenis_kos}</span>
-            <div class="fav-btn" style="position:static;box-shadow:none;font-size:14px" onclick="event.stopPropagation()">🤍</div>
+            <div class="fav-btn" style="position:static;box-shadow:none;font-size:14px" onclick="toggleFavorite('${kos.id}', event, this)">${favoritKosIds.has(kos.id) ? '❤️' : '🤍'}</div>
           </div>
         </div>
       </div>`;
@@ -3264,6 +3239,7 @@ function installPWA() {
       if (error) throw error;
       currentUserProfile = data;
       applyProfileToUI();
+      await loadFavoritIds();
     } catch (err) {
       console.error('Gagal memuat profil:', err);
     }
@@ -3409,7 +3385,112 @@ function installPWA() {
     }
     show(prevScreen);
   }
-  function showFavorit() { show('favorit'); }
+  function showFavorit() { show('favorit'); loadFavoritList(); }
+
+  // ===== FAVORIT: state & fungsi inti =====
+  let favoritKosIds = new Set();
+
+  async function loadFavoritIds() {
+    if (!currentUser) { favoritKosIds = new Set(); return; }
+    try {
+      const { data, error } = await sbClient.from('favorites').select('kos_id').eq('user_id', currentUser.id);
+      if (error) throw error;
+      favoritKosIds = new Set((data || []).map(f => f.kos_id));
+    } catch (err) {
+      console.error('Gagal memuat daftar favorit:', err);
+    }
+  }
+
+  async function toggleFavorite(kosId, event, btnEl) {
+    if (event) event.stopPropagation();
+    if (!currentUser) { alert('Silakan login dulu untuk menyimpan favorit'); return; }
+    const isFav = favoritKosIds.has(kosId);
+    try {
+      if (isFav) {
+        const { error } = await sbClient.from('favorites').delete().eq('user_id', currentUser.id).eq('kos_id', kosId);
+        if (error) throw error;
+        favoritKosIds.delete(kosId);
+        if (btnEl) btnEl.textContent = '🤍';
+      } else {
+        const { error } = await sbClient.from('favorites').insert({ user_id: currentUser.id, kos_id: kosId });
+        if (error) throw error;
+        favoritKosIds.add(kosId);
+        if (btnEl) btnEl.textContent = '❤️';
+      }
+    } catch (err) {
+      console.error('Gagal ubah favorit:', err);
+    }
+  }
+
+  async function loadFavoritList() {
+    const container = document.querySelector('#screen-favorit .favorit-body');
+    if (!container) return;
+    if (!currentUser) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;color:var(--text-3)">
+          <div style="font-size:40px;margin-bottom:10px">🔒</div>
+          <div style="font-size:14px;font-weight:600">Silakan login dulu</div>
+        </div>`;
+      return;
+    }
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)">Memuat...</div>';
+    try {
+      const { data, error } = await sbClient
+        .from('favorites')
+        .select('kos_id, kos(*)')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      const validRows = (data || []).filter(d => d.kos);
+      if (!validRows.length) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:40px 20px;color:var(--text-3)">
+            <div style="font-size:40px;margin-bottom:10px">💔</div>
+            <div style="font-size:14px;font-weight:600">Belum ada kos favorit</div>
+            <div style="font-size:12px;margin-top:4px">Tap ikon hati di kos yang kamu suka</div>
+          </div>`;
+        return;
+      }
+      container.innerHTML = validRows.map(d => renderFavoritCard(d.kos)).join('');
+    } catch (err) {
+      console.error('Gagal memuat favorit:', err);
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)">Gagal memuat favorit</div>';
+    }
+  }
+
+  function renderFavoritCard(kos) {
+    const emoji = kos.jenis_kos === 'Putra' ? '🪑' : kos.jenis_kos === 'Eksklusif' ? '🏠' : '🛏️';
+    const fotoUrl = (kos.foto_urls && kos.foto_urls.length > 0) ? kos.foto_urls[0] : null;
+    const imgContent = fotoUrl
+      ? `<img src="${fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`
+      : emoji;
+    return `
+      <div class="kos-list-card" onclick="openDetail('${kos.id}')">
+        <div class="kos-list-img">${imgContent}</div>
+        <div class="kos-list-info">
+          <div class="kos-list-name">${kos.nama_kos}</div>
+          <div class="kos-list-addr">📍 ${kos.alamat}</div>
+          <div class="kos-list-price">${formatRupiah(kos.harga_per_bulan)}<span style="font-size:11px;color:var(--text-3);font-weight:400">/bln</span></div>
+          <div class="kos-list-footer">
+            <span style="font-size:12px;color:var(--text-3)">⭐ ${kos.rating || 0} (${kos.jumlah_review || 0}) • ${kos.jenis_kos}</span>
+            <div style="font-size:12px;color:var(--red);font-weight:600;cursor:pointer" onclick="removeFavorit('${kos.id}', event)">Hapus</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  async function removeFavorit(kosId, event) {
+    if (event) event.stopPropagation();
+    if (!currentUser) return;
+    try {
+      const { error } = await sbClient.from('favorites').delete().eq('user_id', currentUser.id).eq('kos_id', kosId);
+      if (error) throw error;
+      favoritKosIds.delete(kosId);
+      loadFavoritList();
+    } catch (err) {
+      console.error('Gagal hapus favorit:', err);
+    }
+  }
 
   function showProfil() {
     show('profil');
@@ -4818,13 +4899,7 @@ function installPWA() {
     });
   });
 
-  // Fav toggle
-  document.querySelectorAll('.fav-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      this.textContent = this.textContent === '🤍' ? '❤️' : '🤍';
-    });
-  });
+  // Fav toggle sekarang ditangani langsung oleh toggleFavorite() lewat onclick di setiap kartu
 
   // Income tab
   document.querySelectorAll('.income-tab').forEach(tab => {
