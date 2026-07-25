@@ -4918,19 +4918,31 @@ function installPWA() {
     listArea.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px">Memuat ulasan...</div>';
 
     try {
-      // Ambil semua ulasan untuk kos ini beserta nama & foto penulis
+      // Ambil semua ulasan untuk kos ini
       const { data: reviews, error } = await sbClient
         .from('reviews')
-        .select('*, profiles(nama_lengkap, foto_url)')
+        .select('*')
         .eq('kos_id', kos.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
+
+      // Ambil profil penulis ulasan secara terpisah (tidak ada relasi langsung reviews->profiles)
+      let profileMap = {};
+      if (reviews && reviews.length) {
+        const userIds = [...new Set(reviews.map(r => r.user_id))];
+        const { data: profilesData, error: pErr } = await sbClient
+          .from('profiles')
+          .select('id, nama_lengkap, foto_url')
+          .in('id', userIds);
+        if (pErr) throw pErr;
+        (profilesData || []).forEach(p => { profileMap[p.id] = p; });
+      }
 
       // Render daftar ulasan
       if (!reviews || !reviews.length) {
         listArea.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--text-3);font-size:13px">Belum ada ulasan untuk kos ini.</div>';
       } else {
-        listArea.innerHTML = reviews.map(r => renderReviewItem(r)).join('');
+        listArea.innerHTML = reviews.map(r => renderReviewItem({ ...r, profiles: profileMap[r.user_id] })).join('');
       }
 
       if (!currentUser || (currentUserProfile && currentUserProfile.role === 'pemilik')) {
