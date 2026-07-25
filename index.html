@@ -3808,7 +3808,7 @@ function installPWA() {
                 <button class="btn-terima" onclick="updateStatusBooking('${b.id}','diterima')">✓ Terima</button>
                 <button class="btn-tolak" onclick="updateStatusBooking('${b.id}','ditolak')">✗ Tolak</button>
               ` : ''}
-              <button class="btn-chat-req" onclick="showChat()">💬</button>
+              <button class="btn-chat-req" onclick="openChatForPartner('${b.kos_id}','${b.penyewa_id}')">💬</button>
             </div>
           </div>`;
       }).join('');
@@ -4557,6 +4557,55 @@ function installPWA() {
   }
 
   // Tab switch
+  // ===== Konfirmasi & lanjutan pembayaran (COD) untuk booking yang sudah Diterima =====
+  function showKonfirmasiPembayaran(bookingId) {
+    const b = riwayatBookingData.find(x => x.id === bookingId);
+    if (!b) return;
+    const namaKos = (b.kos && b.kos.nama_kos) || 'Kos';
+    const modal = document.createElement('div');
+    modal.id = 'konfirmasiBayarModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:flex-end;justify-content:center';
+    modal.innerHTML = `
+      <div style="background:white;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:430px">
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="font-size:36px;margin-bottom:8px">✅</div>
+          <div style="font-size:16px;font-weight:800">Booking Diterima!</div>
+          <div style="font-size:13px;color:var(--text-3);margin-top:4px">${namaKos}</div>
+        </div>
+        <div style="background:var(--bg-2);border-radius:12px;padding:12px;margin-bottom:16px">
+          <div style="font-size:12px;color:var(--text-3);margin-bottom:6px">Metode Pembayaran</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px">💵</span>
+            <div>
+              <div style="font-size:13px;font-weight:700">COD - Bayar Langsung ke Pemilik</div>
+              <div style="font-size:11px;color:var(--text-3)">Total ${formatRupiah(b.total_bayar || 0)} saat kamu datang/check-in</div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:16px;line-height:1.5">Tap "Konfirmasi" untuk menandakan kamu serius dan akan datang. Ini juga menghentikan hitung mundur 24 jam.</div>
+        <button onclick="konfirmasiKedatangan('${b.id}')" style="width:100%;padding:14px;background:var(--orange);border:none;border-radius:12px;color:white;font-weight:700;font-size:14px;margin-bottom:8px;cursor:pointer">Konfirmasi Sekarang</button>
+        <button onclick="closeKonfirmasiPembayaran()" style="width:100%;padding:14px;background:transparent;border:none;color:var(--text-3);font-weight:600;font-size:14px;cursor:pointer">Nanti Dulu</button>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+
+  function closeKonfirmasiPembayaran() {
+    const modal = document.getElementById('konfirmasiBayarModal');
+    if (modal) modal.remove();
+  }
+
+  async function konfirmasiKedatangan(bookingId) {
+    try {
+      const { error } = await sbClient.from('booking').update({ status: 'aktif' }).eq('id', bookingId);
+      if (error) throw error;
+      closeKonfirmasiPembayaran();
+      loadRiwayatSewa();
+    } catch (err) {
+      console.error('Gagal konfirmasi:', err);
+      alert('Gagal konfirmasi, coba lagi.');
+    }
+  }
+
   function switchTab(el, tab) {
     document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
@@ -4657,6 +4706,9 @@ function installPWA() {
           <span>Mulai ${tanggal} • ${b.durasi_bulan || '-'} Bln</span>
           <span style="font-weight:700;color:var(--text)">${formatRupiah(b.total_bayar || 0)}</span>
         </div>
+        ${b.status === 'diterima' ? `
+          <button onclick="showKonfirmasiPembayaran('${b.id}')" style="width:100%;margin-top:12px;padding:11px;background:var(--orange);border:none;border-radius:10px;color:white;font-weight:700;font-size:13px;cursor:pointer">Konfirmasi & Lanjutkan →</button>
+        ` : ''}
       </div>`;
   }
 
@@ -4667,6 +4719,15 @@ function installPWA() {
   let chatRealtimeChannel = null; // channel Supabase Realtime aktif
   let currentChatKosId = null;    // kos_id percakapan yang sedang dibuka
   let currentChatPartnerId = null; // user_id lawan bicara
+
+  // Buka chat dengan lawan bicara yang SUDAH DIKETAHUI (dipakai dari Booking Masuk, dst)
+  function openChatForPartner(kosId, partnerId) {
+    currentChatKosId = kosId;
+    currentChatPartnerId = partnerId;
+    show('chat', currentScreen);
+    loadChatMessages();
+    subscribeChatRealtime();
+  }
 
   // Buka chat — dipanggil dari Detail Kos (pencari) atau Booking (pemilik)
   async function showChat() {
@@ -4699,33 +4760,39 @@ function installPWA() {
     if (!container) return;
 
     try {
-      // Filter hanya berdasarkan kos_id — lebih sederhana dan pasti bekerja
-      const { data: messages, error } = await sbClient
-        .from('chat_messages')
-        .select('*')
-        .eq('kos_id', currentChatKosId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      // Untuk pemilik kos: header chat harus tampilkan foto/nama PENCARI KOS
-      // (lawan bicara), bukan foto pemilik sendiri. Ambil dari pesan masuk terakhir.
       const isPemilikView = currentUserProfile && currentUserProfile.role === 'pemilik';
-      if (isPemilikView && messages && messages.length) {
-        const pesanMasuk = messages.filter(m => m.sender_id !== currentUser.id);
-        const lawanBicara = pesanMasuk.length ? pesanMasuk[pesanMasuk.length - 1] : null;
-        if (lawanBicara) {
-          const nameEl = document.getElementById('chatHeaderName');
-          const avatarEl = document.getElementById('chatHeaderAvatar');
-          if (nameEl) nameEl.textContent = lawanBicara.sender_nama || 'Pencari Kos';
-          if (avatarEl) {
-            avatarEl.innerHTML = lawanBicara.sender_foto
-              ? `<img src="${lawanBicara.sender_foto}" style="width:100%;height:100%;object-fit:cover">`
-              : '🧑';
-          }
-          currentChatPartnerId = lawanBicara.sender_id;
+
+      // Header untuk pemilik: ambil profil lawan bicara langsung (partner sudah diketahui sejak chat dibuka)
+      if (isPemilikView && currentChatPartnerId) {
+        const { data: partnerProfile } = await sbClient
+          .from('profiles')
+          .select('nama_lengkap, foto_url')
+          .eq('id', currentChatPartnerId)
+          .single();
+        const nameEl = document.getElementById('chatHeaderName');
+        const avatarEl = document.getElementById('chatHeaderAvatar');
+        if (nameEl) nameEl.textContent = (partnerProfile && partnerProfile.nama_lengkap) || 'Pencari Kos';
+        if (avatarEl) {
+          avatarEl.innerHTML = (partnerProfile && partnerProfile.foto_url)
+            ? `<img src="${partnerProfile.foto_url}" style="width:100%;height:100%;object-fit:cover">`
+            : '🧑';
         }
       }
+
+      // Filter ketat: pesan untuk kos ini DAN hanya antara currentUser <-> currentChatPartnerId
+      // (mencegah pesan dari pencari lain soal kos yang sama ikut tercampur)
+      let query = sbClient.from('chat_messages').select('*').eq('kos_id', currentChatKosId);
+      if (currentChatPartnerId) {
+        query = query.or(
+          `and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentChatPartnerId}),` +
+          `and(sender_id.eq.${currentChatPartnerId},receiver_id.eq.${currentUser.id})`
+        );
+      } else {
+        query = query.or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
+      }
+      const { data: messages, error } = await query.order('created_at', { ascending: true });
+
+      if (error) throw error;
 
       if (!messages || !messages.length) {
         container.innerHTML = `
@@ -5027,8 +5094,22 @@ function installPWA() {
     }
     currentChatKosId = kosId;
 
-    // Set header chat dari kos
-    if (kos) {
+    const isPemilikView = currentUserProfile && currentUserProfile.role === 'pemilik';
+
+    if (isPemilikView) {
+      // Cari lawan bicara (pencari) terakhir untuk kos ini — bukan pemilik sendiri
+      const { data: lastMsg } = await sbClient
+        .from('chat_messages')
+        .select('sender_id, receiver_id')
+        .eq('kos_id', kosId)
+        .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      currentChatPartnerId = lastMsg
+        ? (lastMsg.sender_id === currentUser.id ? lastMsg.receiver_id : lastMsg.sender_id)
+        : null;
+    } else if (kos) {
       const nameEl = document.getElementById('chatHeaderName');
       const avatarEl = document.getElementById('chatHeaderAvatar');
       if (nameEl) nameEl.textContent = kos.owner_nama || kos.nama_kos || 'Chat';
