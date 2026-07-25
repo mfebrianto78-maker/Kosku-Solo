@@ -1438,12 +1438,22 @@ function installPWA() {
             <span class="label">Total</span>
             <span class="value" id="bkValTotal">Rp 0</span>
           </div>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--border)">
+            <div style="font-size:12px;color:var(--text-3);margin-bottom:6px">Metode Pembayaran</div>
+            <div style="display:flex;align-items:center;gap:8px;background:var(--bg-2);border-radius:12px;padding:10px 12px">
+              <span style="font-size:18px">💵</span>
+              <div>
+                <div style="font-size:13px;font-weight:700">COD - Bayar Langsung ke Pemilik</div>
+                <div style="font-size:11px;color:var(--text-3)">Setelah cek lokasi & booking diterima pemilik</div>
+              </div>
+            </div>
+          </div>
         </div>
         <div id="bkError" style="color:var(--red);font-size:13px;display:none"></div>
       </div>
     </div>
     <div class="booking-footer">
-      <button class="btn-primary" id="bkSubmitBtn" onclick="handleSubmitBooking()">Lanjut Pembayaran →</button>
+      <button class="btn-primary" id="bkSubmitBtn" onclick="handleSubmitBooking()">Kirim Booking →</button>
     </div>
   </div>
 
@@ -2034,8 +2044,8 @@ function installPWA() {
   <!-- ===== SUCCESS ===== -->
   <div id="screen-success" class="screen">
     <div class="success-icon">🎉</div>
-    <div class="success-title">Booking Berhasil!</div>
-    <div class="success-desc">Pembayaran Anda telah dikonfirmasi. Pemilik kos akan segera menghubungi Anda.</div>
+    <div class="success-title">Booking Terkirim!</div>
+    <div class="success-desc">Permintaan booking kamu sudah dikirim ke pemilik kos. Kamu akan dapat notifikasi begitu pemilik merespons. Pembayaran dilakukan langsung (COD) setelah booking diterima.</div>
     <div class="success-card">
       <div class="summary-row"><span class="label">Kos</span><span class="value">Kos Griya Kartini</span></div>
       <div class="summary-row"><span class="label">Kamar</span><span class="value">Kamar 101</span></div>
@@ -2466,13 +2476,13 @@ function installPWA() {
         );
       }
 
-      renderPaymentSummary(data, kamar);
-      show('payment', 'booking');
+      renderSuccessScreen();
+      show('success', 'booking');
     } catch (err) {
       console.error(err);
       showAuthError('bkError', err.message || 'Gagal membuat booking. Coba lagi.');
     } finally {
-      btn.textContent = 'Lanjut Pembayaran →'; btn.disabled = false;
+      btn.textContent = 'Kirim Booking →'; btn.disabled = false;
     }
   }
 
