@@ -1275,7 +1275,7 @@ function installPWA() {
 
     <div class="detail-actions">
       <button class="btn-chat" onclick="showChat()">💬 Chat</button>
-      <button class="btn-booking" onclick="openBookingScreen()">📅 Booking Sekarang</button>
+      <button class="btn-booking" onclick="showBookingConfirmModal()">📅 Booking Sekarang</button>
     </div>
   </div>
 
@@ -2297,6 +2297,33 @@ function installPWA() {
   let pendingBookingId = null; // booking yang baru dibuat, dipakai di halaman payment
 
   // Buka halaman booking untuk kos yang sedang dilihat di Detail
+  // ===== Modal konfirmasi minat sebelum form booking (Alur B) =====
+  function showBookingConfirmModal() {
+    if (!currentUser) {
+      alert('Silakan login dahulu untuk melakukan booking.');
+      showLogin();
+      return;
+    }
+    if (!selectedKos) return;
+    const modal = document.createElement('div');
+    modal.id = 'bookingConfirmModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:flex-end;justify-content:center';
+    modal.innerHTML = `
+      <div style="background:white;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:430px;text-align:center">
+        <div style="font-size:36px;margin-bottom:8px">📋</div>
+        <div style="font-size:16px;font-weight:800;margin-bottom:4px">Konfirmasi Minat Booking</div>
+        <div style="font-size:13px;color:var(--text-3);margin-bottom:16px;line-height:1.5">Kamu akan mengisi form booking untuk<br><b>${selectedKos.nama_kos}</b><br>${formatRupiah(selectedKos.harga_per_bulan)}/bln</div>
+        <button onclick="closeBookingConfirmModal();openBookingScreen();" style="width:100%;padding:14px;background:var(--orange);border:none;border-radius:12px;color:white;font-weight:700;font-size:14px;margin-bottom:8px;cursor:pointer">Ya, Lanjut Isi Form</button>
+        <button onclick="closeBookingConfirmModal()" style="width:100%;padding:14px;background:transparent;border:none;color:var(--text-3);font-weight:600;font-size:14px;cursor:pointer">Batal</button>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+
+  function closeBookingConfirmModal() {
+    const modal = document.getElementById('bookingConfirmModal');
+    if (modal) modal.remove();
+  }
+
   async function openBookingScreen() {
     if (!currentUser) {
       alert('Silakan login dahulu untuk melakukan booking.');
@@ -2386,6 +2413,21 @@ function installPWA() {
 
     const kamar = bookingKamarList.find(k => k.id === kamarId);
     if (!kamar) return showAuthError('bkError', 'Kamar tidak valid, silakan pilih ulang.');
+
+    // Batasi maksimal 2 booking berstatus "menunggu" bersamaan, biar tidak asal booking banyak kos
+    try {
+      const { data: pendingBookings, error: pendErr } = await sbClient
+        .from('booking')
+        .select('id')
+        .eq('penyewa_id', currentUser.id)
+        .eq('status', 'menunggu');
+      if (pendErr) throw pendErr;
+      if (pendingBookings && pendingBookings.length >= 2) {
+        return showAuthError('bkError', 'Kamu masih punya 2 booking yang sedang menunggu respons pemilik. Selesaikan itu dulu sebelum booking kos lain.');
+      }
+    } catch (limitErr) {
+      console.error('Gagal cek batas booking:', limitErr);
+    }
 
     const deposit = 300000, admin = 50000;
     const totalBayar = (kamar.harga * durasi) + deposit + admin;
@@ -3654,7 +3696,7 @@ function installPWA() {
       const kosIds = myKosData.map(k => k.id);
 
       // Ambil booking masuk untuk semua kos milik owner ini
-      const { data: bookings, error } = await sbClient
+      const { data: bookingsData, error } = await sbClient
         .from('booking')
         .select('*, kamar(nomor_kamar), kos(nama_kos)')
         .in('kos_id', kosIds)
@@ -3662,6 +3704,7 @@ function installPWA() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      let bookings = bookingsData;
 
       if (!bookings || !bookings.length) {
         container.innerHTML = `
@@ -3673,13 +3716,33 @@ function installPWA() {
         return;
       }
 
-      // Ambil foto profil penyewa
+      // Auto-expire: booking yang sudah diterima tapi lewat 24 jam tanpa follow-up
+      const now = new Date();
+      const expiredIds = bookings
+        .filter(b => b.status === 'diterima' && b.diterima_at && (now - new Date(b.diterima_at)) > 24 * 3600000)
+        .map(b => b.id);
+      if (expiredIds.length) {
+        await sbClient.from('booking').update({ status: 'kedaluwarsa' }).in('id', expiredIds);
+        bookings = bookings.filter(b => !expiredIds.includes(b.id));
+      }
+
+      if (!bookings.length) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:60px 20px;color:var(--text-3)">
+            <div style="font-size:48px;margin-bottom:12px">📋</div>
+            <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">Belum Ada Booking</div>
+            <div style="font-size:13px">Booking dari penyewa akan muncul di sini</div>
+          </div>`;
+        return;
+      }
+
+      // Ambil foto profil penyewa + skor kepercayaan
       const penyewaIds = [...new Set(bookings.map(b => b.penyewa_id).filter(Boolean))];
       const profileMap = {};
       if (penyewaIds.length) {
         const { data: profiles } = await sbClient
           .from('profiles')
-          .select('id, nama_lengkap, foto_url')
+          .select('id, nama_lengkap, foto_url, booking_ok_count, booking_bermasalah_count')
           .in('id', penyewaIds);
         (profiles || []).forEach(p => { profileMap[p.id] = p; });
       }
@@ -3705,12 +3768,21 @@ function installPWA() {
         const namaKos = b.kos ? b.kos.nama_kos : '-';
         const nomorKamar = b.kamar ? b.kamar.nomor_kamar : '-';
 
+        const okCount = profile.booking_ok_count || 0;
+        const bermasalahCount = profile.booking_bermasalah_count || 0;
+        let trustBadge = '';
+        if (bermasalahCount >= 2 && bermasalahCount >= okCount) {
+          trustBadge = '<span style="font-size:10px;color:#DC2626;font-weight:700"> ⚠️ Riwayat kurang baik</span>';
+        } else if (okCount > 0) {
+          trustBadge = '<span style="font-size:10px;color:#16A34A;font-weight:700"> ✅ Riwayat baik</span>';
+        }
+
         return `
           <div class="booking-req-card">
             <div class="booking-req-head">
               <div class="req-avatar" style="background:${avatarBg};overflow:hidden">${avatarHTML}</div>
               <div>
-                <div class="req-name">${nama}</div>
+                <div class="req-name">${nama}${trustBadge}</div>
                 <div class="req-time">${waktu} • ${namaKos}</div>
               </div>
               ${statusBadge}
@@ -3746,9 +3818,12 @@ function installPWA() {
         .eq('id', bookingId)
         .single();
 
+      const updatePayload = { status: status };
+      if (status === 'diterima') updatePayload.diterima_at = new Date().toISOString();
+
       const { error } = await sbClient
         .from('booking')
-        .update({ status: status })
+        .update(updatePayload)
         .eq('id', bookingId);
       if (error) throw error;
 
@@ -3759,7 +3834,7 @@ function installPWA() {
           await kirimNotifikasi(
             booking.penyewa_id,
             '✅ Booking Diterima!',
-            `Selamat! Booking Anda untuk ${namaKos} telah diterima oleh pemilik. Silakan lakukan pembayaran.`,
+            `Selamat! Booking Anda untuk ${namaKos} telah diterima oleh pemilik. Segera lakukan konfirmasi dalam 1x24 jam, jika tidak booking akan otomatis dibatalkan.`,
             'booking'
           );
         } else if (status === 'ditolak') {
@@ -4516,7 +4591,7 @@ function installPWA() {
     const statusGroups = {
       aktif: ['menunggu', 'diterima', 'aktif'],
       selesai: ['selesai'],
-      batal: ['ditolak']
+      batal: ['ditolak', 'kedaluwarsa']
     };
     const allowed = statusGroups[tab] || [];
     const filtered = riwayatBookingData.filter(b => allowed.includes(b.status));
@@ -4548,7 +4623,8 @@ function installPWA() {
       diterima: { label: 'Diterima', color: '#22c55e' },
       aktif: { label: 'Aktif', color: '#22c55e' },
       selesai: { label: 'Selesai', color: '#64748b' },
-      ditolak: { label: 'Ditolak', color: '#ef4444' }
+      ditolak: { label: 'Ditolak', color: '#ef4444' },
+      kedaluwarsa: { label: 'Kedaluwarsa', color: '#ef4444' }
     };
     const badge = badgeMap[b.status] || { label: b.status, color: '#64748b' };
     const tanggal = b.tanggal_masuk
