@@ -1257,6 +1257,13 @@ function installPWA() {
 
       <div class="section-divider"></div>
       <div class="detail-body" style="padding-top:0">
+        <div class="detail-section-title">Ulasan</div>
+        <div id="reviewFormArea" style="margin-bottom:16px"></div>
+        <div id="reviewListArea"></div>
+      </div>
+
+      <div class="section-divider"></div>
+      <div class="detail-body" style="padding-top:0">
         <div class="detail-section-title">Lokasi</div>
         <div id="detailLeafletMap" style="height:200px;border-radius:16px;margin-bottom:14px;border:1.5px solid var(--border);overflow:hidden"></div>
         <div style="display:flex;gap:8px">
@@ -2090,7 +2097,7 @@ function installPWA() {
           <div class="kos-addr">📍 ${kos.alamat}</div>
           <div class="kos-footer">
             <div class="kos-price">${formatRupiah(kos.harga_per_bulan)}<span>/bln</span></div>
-            <div class="kos-rating">⭐ ${kos.rating} <span style="color:var(--text-3);font-weight:400">(${kos.jumlah_review})</span></div>
+            <div class="kos-rating">⭐ ${kos.rating || 0} <span style="color:var(--text-3);font-weight:400">(${kos.jumlah_review || 0})</span>${kos.jumlah_booking ? ` <span style="color:var(--text-3);font-weight:400">• 🗓️ ${kos.jumlah_booking}x disewa</span>` : ''}</div>
           </div>
         </div>
       </div>`;
@@ -2111,7 +2118,7 @@ function installPWA() {
           <div class="kos-list-addr">📍 ${kos.alamat}</div>
           <div class="kos-list-price">${formatRupiah(kos.harga_per_bulan)}<span style="font-size:11px;color:var(--text-3);font-weight:400">/bln</span></div>
           <div class="kos-list-footer">
-            <span style="font-size:12px;color:var(--text-3)">⭐ ${kos.rating} (${kos.jumlah_review}) • ${kos.jenis_kos}</span>
+            <span style="font-size:12px;color:var(--text-3)">⭐ ${kos.rating || 0} (${kos.jumlah_review || 0}) • ${kos.jenis_kos}${kos.jumlah_booking ? ` • 🗓️ ${kos.jumlah_booking}x` : ''}</span>
             <div class="fav-btn" style="position:static;box-shadow:none;font-size:14px" onclick="toggleFavorite('${kos.id}', event, this)">${favoritKosIds.has(kos.id) ? '❤️' : '🤍'}</div>
           </div>
         </div>
@@ -2177,6 +2184,7 @@ function installPWA() {
     if (!kos) return;
     selectedKos = kos;
     renderDetailScreen(kos);
+    loadReviewsSection(kos);
     showDetail();
   }
 
@@ -4899,7 +4907,134 @@ function installPWA() {
     });
   });
 
-  // Fav toggle sekarang ditangani langsung oleh toggleFavorite() lewat onclick di setiap kartu
+  // ===== RATING & REVIEW =====
+  let selectedStarValue = 0;
+
+  async function loadReviewsSection(kos) {
+    const formArea = document.getElementById('reviewFormArea');
+    const listArea = document.getElementById('reviewListArea');
+    if (!formArea || !listArea) return;
+    formArea.innerHTML = '';
+    listArea.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px">Memuat ulasan...</div>';
+
+    try {
+      // Ambil semua ulasan untuk kos ini beserta nama & foto penulis
+      const { data: reviews, error } = await sbClient
+        .from('reviews')
+        .select('*, profiles(nama_lengkap, foto_url)')
+        .eq('kos_id', kos.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+
+      // Render daftar ulasan
+      if (!reviews || !reviews.length) {
+        listArea.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--text-3);font-size:13px">Belum ada ulasan untuk kos ini.</div>';
+      } else {
+        listArea.innerHTML = reviews.map(r => renderReviewItem(r)).join('');
+      }
+
+      if (!currentUser || (currentUserProfile && currentUserProfile.role === 'pemilik')) {
+        return; // Pemilik / belum login tidak perlu lihat form review
+      }
+
+      const myReview = (reviews || []).find(r => r.user_id === currentUser.id);
+      if (myReview) {
+        formArea.innerHTML = `
+          <div style="background:var(--bg-2);border-radius:14px;padding:14px;font-size:12px;color:var(--text-3)">
+            ✅ Kamu sudah memberi ulasan untuk kos ini
+          </div>`;
+        return;
+      }
+
+      // Cek kelayakan: hanya penyewa dengan booking diterima/aktif/selesai yang boleh review
+      const { data: bookingEligible, error: bErr } = await sbClient
+        .from('booking')
+        .select('id')
+        .eq('kos_id', kos.id)
+        .eq('penyewa_id', currentUser.id)
+        .in('status', ['diterima', 'aktif', 'selesai'])
+        .limit(1);
+      if (bErr) throw bErr;
+
+      if (bookingEligible && bookingEligible.length) {
+        renderReviewForm(kos.id);
+      }
+      // Kalau tidak eligible, form tidak ditampilkan sama sekali (tanpa pesan mengganggu UX)
+    } catch (err) {
+      console.error('Gagal memuat ulasan:', err);
+      listArea.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--text-3);font-size:13px">Gagal memuat ulasan.</div>';
+    }
+  }
+
+  function renderReviewForm(kosId) {
+    selectedStarValue = 0;
+    const formArea = document.getElementById('reviewFormArea');
+    if (!formArea) return;
+    formArea.innerHTML = `
+      <div style="background:var(--bg-2);border-radius:14px;padding:14px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">Beri ulasan untuk kos ini</div>
+        <div id="starPicker" style="font-size:26px;letter-spacing:4px;margin-bottom:10px;cursor:pointer">
+          ${[1,2,3,4,5].map(n => `<span data-star="${n}" onclick="setStarValue(${n})">☆</span>`).join('')}
+        </div>
+        <textarea id="reviewKomentar" placeholder="Bagaimana pengalaman kamu tinggal di kos ini?" style="width:100%;min-height:70px;border:1.5px solid var(--border);border-radius:12px;padding:10px;font-size:13px;font-family:inherit;resize:vertical"></textarea>
+        <button onclick="submitReview('${kosId}')" style="width:100%;margin-top:10px;padding:12px;background:var(--orange);border:none;border-radius:12px;color:white;font-weight:700;font-size:13px;cursor:pointer">Kirim Ulasan</button>
+      </div>`;
+  }
+
+  function setStarValue(n) {
+    selectedStarValue = n;
+    document.querySelectorAll('#starPicker span').forEach(el => {
+      const starN = parseInt(el.getAttribute('data-star'));
+      el.textContent = starN <= n ? '★' : '☆';
+      el.style.color = starN <= n ? 'var(--orange)' : 'inherit';
+    });
+  }
+
+  async function submitReview(kosId) {
+    if (!currentUser) { alert('Silakan login dulu'); return; }
+    if (!selectedStarValue) { alert('Pilih bintang dulu ya'); return; }
+    const komentar = (document.getElementById('reviewKomentar')?.value || '').trim();
+    try {
+      const { error } = await sbClient.from('reviews').insert({
+        kos_id: kosId,
+        user_id: currentUser.id,
+        rating: selectedStarValue,
+        komentar: komentar || null
+      });
+      if (error) throw error;
+      // Refresh data kos (rating/jumlah_review ter-update lewat trigger di database)
+      await loadKosData();
+      const updatedKos = allKosData.find(k => k.id === kosId);
+      if (updatedKos) {
+        selectedKos = updatedKos;
+        renderDetailScreen(updatedKos);
+        loadReviewsSection(updatedKos);
+      }
+    } catch (err) {
+      console.error('Gagal kirim ulasan:', err);
+      alert('Gagal mengirim ulasan, coba lagi.');
+    }
+  }
+
+  function renderReviewItem(r) {
+    const nama = (r.profiles && r.profiles.nama_lengkap) || 'Pengguna';
+    const foto = r.profiles && r.profiles.foto_url;
+    const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+    const tanggal = new Date(r.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `
+      <div style="display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)">
+        <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--orange-light);display:flex;align-items:center;justify-content:center;font-size:16px">
+          ${foto ? `<img src="${foto}" style="width:100%;height:100%;object-fit:cover">` : '🧑'}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700">${nama}</div>
+          <div style="color:var(--orange);font-size:13px;letter-spacing:1px">${stars}</div>
+          ${r.komentar ? `<div style="font-size:13px;color:var(--text-2);margin-top:4px;line-height:1.5">${r.komentar}</div>` : ''}
+          <div style="font-size:11px;color:var(--text-3);margin-top:4px">${tanggal}</div>
+        </div>
+      </div>`;
+  }
+
 
   // Income tab
   document.querySelectorAll('.income-tab').forEach(tab => {
