@@ -1519,13 +1519,7 @@ function installPWA() {
         <div class="tab-item" onclick="switchTab(this,'batal')">Dibatalkan</div>
       </div>
     </div>
-    <div class="riwayat-list" style="flex:1;overflow-y:auto" id="riwayatList">
-      <div style="text-align:center;padding:60px 20px;color:var(--text-3)">
-        <div style="font-size:48px;margin-bottom:12px">📋</div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">Belum Ada Riwayat Sewa</div>
-        <div style="font-size:13px">Riwayat booking dan sewa kos Anda akan muncul di sini</div>
-      </div>
-    </div>
+    <div class="riwayat-list" style="flex:1;overflow-y:auto" id="riwayatList"></div>
     <div class="bottom-nav">
       <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
       <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
@@ -3380,7 +3374,7 @@ function installPWA() {
   function showBooking() { show('booking', 'detail'); }
   function showPayment() { show('payment', 'booking'); }
   function showSuccess() { show('success'); }
-  function showRiwayat() { show('riwayat'); }
+  function showRiwayat() { show('riwayat'); loadRiwayatSewa(); }
   function goBackFromChat() {
     // Unsubscribe realtime dan hentikan polling saat keluar dari chat
     if (chatRealtimeChannel) {
@@ -4481,7 +4475,105 @@ function installPWA() {
   function switchTab(el, tab) {
     document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
+    if (currentScreen === 'riwayat') renderRiwayatList(tab);
   }
+
+  // ===== RIWAYAT SEWA (Pencari Kos) =====
+  let riwayatBookingData = [];
+  let riwayatCurrentTab = 'aktif';
+
+  async function loadRiwayatSewa() {
+    const container = document.getElementById('riwayatList');
+    if (!container) return;
+    if (!currentUser) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;color:var(--text-3)">
+          <div style="font-size:48px;margin-bottom:12px">🔒</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Silakan login dulu</div>
+        </div>`;
+      return;
+    }
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)">Memuat...</div>';
+    try {
+      const { data, error } = await sbClient
+        .from('booking')
+        .select('*, kamar(nomor_kamar), kos(nama_kos, foto_urls)')
+        .eq('penyewa_id', currentUser.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      riwayatBookingData = data || [];
+      renderRiwayatList(riwayatCurrentTab);
+    } catch (err) {
+      console.error('Gagal memuat riwayat sewa:', err);
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)">Gagal memuat riwayat sewa.</div>';
+    }
+  }
+
+  function renderRiwayatList(tab) {
+    riwayatCurrentTab = tab;
+    const container = document.getElementById('riwayatList');
+    if (!container) return;
+    const statusGroups = {
+      aktif: ['menunggu', 'diterima', 'aktif'],
+      selesai: ['selesai'],
+      batal: ['ditolak']
+    };
+    const allowed = statusGroups[tab] || [];
+    const filtered = riwayatBookingData.filter(b => allowed.includes(b.status));
+
+    if (!filtered.length) {
+      const emptyMsg = {
+        aktif: 'Belum Ada Sewa Aktif',
+        selesai: 'Belum Ada Riwayat yang Selesai',
+        batal: 'Tidak Ada Booking Dibatalkan'
+      };
+      container.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;color:var(--text-3)">
+          <div style="font-size:48px;margin-bottom:12px">📋</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">${emptyMsg[tab] || 'Belum Ada Riwayat Sewa'}</div>
+          <div style="font-size:13px">Riwayat booking dan sewa kos Anda akan muncul di sini</div>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = filtered.map(b => renderRiwayatCard(b)).join('');
+  }
+
+  function renderRiwayatCard(b) {
+    const namaKos = (b.kos && b.kos.nama_kos) || 'Kos';
+    const nomorKamar = (b.kamar && b.kamar.nomor_kamar) || '-';
+    const fotoUrl = (b.kos && b.kos.foto_urls && b.kos.foto_urls.length) ? b.kos.foto_urls[0] : null;
+    const badgeMap = {
+      menunggu: { label: 'Menunggu', color: '#f59e0b' },
+      diterima: { label: 'Diterima', color: '#22c55e' },
+      aktif: { label: 'Aktif', color: '#22c55e' },
+      selesai: { label: 'Selesai', color: '#64748b' },
+      ditolak: { label: 'Ditolak', color: '#ef4444' }
+    };
+    const badge = badgeMap[b.status] || { label: b.status, color: '#64748b' };
+    const tanggal = b.tanggal_masuk
+      ? new Date(b.tanggal_masuk).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '-';
+
+    return `
+      <div style="background:white;border-radius:14px;padding:14px;margin:0 20px 12px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+          <div style="width:44px;height:44px;border-radius:10px;overflow:hidden;background:var(--orange-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">
+            ${fotoUrl ? `<img src="${fotoUrl}" style="width:100%;height:100%;object-fit:cover">` : '🏠'}
+          </div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700">${namaKos}</div>
+            <div style="font-size:12px;color:var(--text-3)">Kamar ${nomorKamar}</div>
+          </div>
+          <div style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${badge.color}22;color:${badge.color}">${badge.label}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-3);border-top:1px solid var(--border);padding-top:10px">
+          <span>Mulai ${tanggal} • ${b.durasi_bulan || '-'} Bln</span>
+          <span style="font-weight:700;color:var(--text)">${formatRupiah(b.total_bayar || 0)}</span>
+        </div>
+      </div>`;
+  }
+
 
   // ============================================
   // CHAT REAL-TIME - Supabase Realtime
