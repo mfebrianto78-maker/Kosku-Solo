@@ -2332,13 +2332,17 @@ function installPWA() {
       _kwitansiBookingCache = b;
 
       document.getElementById('kwitansiFormBody').innerHTML = `
+        <div style="text-align:left;margin-bottom:14px">
+          <label style="font-size:12px;color:var(--text-3)">Nama Kos</label>
+          <input id="kwNamaKos" type="text" value="${(b.kos && b.kos.nama_kos) || ''}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin-top:6px;font-size:17px;font-weight:800;box-sizing:border-box">
+        </div>
         <div style="background:var(--bg-2);border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px;text-align:left">
           <div><b>${b.nama_pemesan || 'Penyewa'}</b></div>
-          <div style="color:var(--text-3)">${(b.kos && b.kos.nama_kos) || 'Kos'} • Kamar ${(b.kamar && b.kamar.nomor_kamar) || '-'}</div>
+          <div style="color:var(--text-3)">Kamar ${(b.kamar && b.kamar.nomor_kamar) || '-'}</div>
         </div>
         <div style="text-align:left">
           <label style="font-size:12px;color:var(--text-3)">Jumlah Dibayar (Rp)</label>
-          <input id="kwJumlah" type="number" value="${b.total_bayar || ''}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 12px;font-size:14px;box-sizing:border-box">
+          <input id="kwJumlah" type="number" value="${b.total_bayar || ''}" placeholder="Contoh: ketik Rp 500000" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 12px;font-size:14px;box-sizing:border-box">
 
           <label style="font-size:12px;color:var(--text-3)">Untuk Pembayaran</label>
           <input id="kwPeriode" type="text" placeholder="Contoh: Sewa bulan Agustus 2026" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 12px;font-size:14px;box-sizing:border-box">
@@ -2356,7 +2360,8 @@ function installPWA() {
           <label style="font-size:12px;color:var(--text-3)">Catatan (opsional)</label>
           <textarea id="kwCatatan" placeholder="Catatan tambahan..." style="width:100%;min-height:60px;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 16px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>
         </div>
-        <button onclick="submitKwitansi('${bookingId}')" style="width:100%;padding:14px;background:var(--orange);border:none;border-radius:12px;color:white;font-weight:700;font-size:14px;margin-bottom:8px;cursor:pointer">Buat Kwitansi</button>
+        <button onclick="submitKwitansi('${bookingId}')" style="width:100%;padding:14px;background:var(--orange);border:none;border-radius:12px;color:white;font-weight:700;font-size:14px;margin-bottom:4px;cursor:pointer">Bukti Kwitansi</button>
+        <div style="text-align:center;font-size:11px;color:var(--text-3);margin-bottom:12px">Screenshot halaman ini</div>
         <button onclick="closeKwitansiFormModal()" style="width:100%;padding:14px;background:transparent;border:none;color:var(--text-3);font-weight:600;font-size:14px;cursor:pointer">Batal</button>
       `;
     } catch (err) {
@@ -2372,12 +2377,14 @@ function installPWA() {
 
   async function submitKwitansi(bookingId) {
     const b = _kwitansiBookingCache;
+    const namaKosInput = document.getElementById('kwNamaKos').value.trim();
     const jumlah = parseInt(document.getElementById('kwJumlah').value, 10);
     const periode = document.getElementById('kwPeriode').value.trim();
     const tanggal = document.getElementById('kwTanggal').value;
     const metode = document.getElementById('kwMetode').value;
     const catatan = document.getElementById('kwCatatan').value.trim();
 
+    if (!namaKosInput) { alert('Isi nama kos.'); return; }
     if (!jumlah || jumlah <= 0) { alert('Isi jumlah dibayar dengan benar.'); return; }
     if (!periode) { alert('Isi untuk pembayaran apa.'); return; }
     if (!tanggal) { alert('Isi tanggal pembayaran.'); return; }
@@ -2404,7 +2411,7 @@ function installPWA() {
         nomor_kwitansi: nomorKwitansi,
         jumlah, untuk_periode: periode, tanggal_bayar: tanggal, metode_bayar: metode, catatan,
         nama_penyewa: b.nama_pemesan,
-        nama_kos: (b.kos && b.kos.nama_kos) || 'Kos',
+        nama_kos: namaKosInput,
         nomor_kamar: (b.kamar && b.kamar.nomor_kamar) || '-'
       });
     } catch (err) {
