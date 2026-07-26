@@ -994,6 +994,7 @@ function installPWA() {
       </div>
     </div>
     <div class="dash-content">
+      <div id="bookingAlertBanner"></div>
       <div class="category-scroll">
         <div class="cat-chip active" onclick="filterDashboard(this,'')">Semua</div>
         <div class="cat-chip" onclick="filterDashboard(this,'Putra')">Putra</div>
@@ -3294,6 +3295,7 @@ function installPWA() {
       currentUserProfile = data;
       applyProfileToUI();
       await loadFavoritIds();
+      loadBookingAlertBanner();
     } catch (err) {
       console.error('Gagal memuat profil:', err);
     }
@@ -3343,7 +3345,43 @@ function installPWA() {
   function showLogin() { show('login'); }
   function showRegister() { show('register'); }
   function showRole() { show('role'); }
-  function showDashboard() { show('dashboard'); prevScreen = 'dashboard'; }
+  function showDashboard() { show('dashboard'); prevScreen = 'dashboard'; loadBookingAlertBanner(); }
+
+  // ===== Banner "Booking Diterima" di Beranda pencari kos =====
+  async function loadBookingAlertBanner() {
+    const container = document.getElementById('bookingAlertBanner');
+    if (!container) return;
+    if (!currentUser || (currentUserProfile && currentUserProfile.role === 'pemilik')) {
+      container.innerHTML = '';
+      return;
+    }
+    try {
+      const { data, error } = await sbClient
+        .from('booking')
+        .select('*, kos(nama_kos)')
+        .eq('penyewa_id', currentUser.id)
+        .eq('status', 'diterima')
+        .order('diterima_at', { ascending: false });
+      if (error) throw error;
+      if (!data || !data.length) { container.innerHTML = ''; return; }
+
+      // Simpan ke riwayatBookingData supaya showKonfirmasiPembayaran() bisa menemukan datanya
+      riwayatBookingData = data;
+
+      container.innerHTML = data.map(b => `
+        <div style="background:linear-gradient(135deg,#22c55e,#16a34a);border-radius:16px;padding:16px;margin-bottom:14px;color:white">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:20px">✅</span>
+            <div style="font-weight:800;font-size:14px">Booking Diterima!</div>
+          </div>
+          <div style="font-size:12px;opacity:0.9;margin-bottom:12px">${(b.kos && b.kos.nama_kos) || 'Kos'} — segera konfirmasi dalam 1x24 jam</div>
+          <button onclick="showKonfirmasiPembayaran('${b.id}')" style="width:100%;padding:12px;background:white;border:none;border-radius:10px;color:#16a34a;font-weight:700;font-size:13px;cursor:pointer">Konfirmasi & Lanjutkan →</button>
+        </div>
+      `).join('');
+    } catch (err) {
+      console.error('Gagal memuat notifikasi booking:', err);
+    }
+  }
 
   // Navigasi "Beranda" pintar: arahkan ke dashboard sesuai role user yang sedang login
   function goToBeranda() {
@@ -4600,6 +4638,7 @@ function installPWA() {
       if (error) throw error;
       closeKonfirmasiPembayaran();
       loadRiwayatSewa();
+      loadBookingAlertBanner();
     } catch (err) {
       console.error('Gagal konfirmasi:', err);
       alert('Gagal konfirmasi, coba lagi.');
