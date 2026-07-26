@@ -2316,9 +2316,9 @@ function installPWA() {
     modal.id = 'kwitansiFormModal';
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:flex-end;justify-content:center';
     modal.innerHTML = `
-      <div style="background:white;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:430px;max-height:85vh;overflow-y:auto">
-        <div style="font-size:16px;font-weight:800;margin-bottom:16px;text-align:center">🧾 Buat Kwitansi</div>
-        <div id="kwitansiFormBody" style="text-align:center;padding:20px;color:var(--text-3)">Memuat data booking...</div>
+      <div style="background:white;border-radius:16px 16px 0 0;padding:16px 16px;width:100%;max-width:430px;max-height:88vh;overflow-y:auto">
+        <div style="font-size:14px;font-weight:800;margin-bottom:10px;text-align:center">🧾 Buat Kwitansi</div>
+        <div id="kwitansiFormBody" style="text-align:center;padding:14px;color:var(--text-3)">Memuat data booking...</div>
       </div>`;
     document.body.appendChild(modal);
 
@@ -2332,44 +2332,44 @@ function installPWA() {
       _kwitansiBookingCache = b;
 
       document.getElementById('kwitansiFormBody').innerHTML = `
-        <div style="text-align:left;margin-bottom:14px">
-          <label style="font-size:12px;color:var(--text-3)">Nama Kos</label>
-          <input id="kwNamaKos" type="text" value="${(b.kos && b.kos.nama_kos) || ''}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin-top:6px;font-size:17px;font-weight:800;box-sizing:border-box">
+        <div style="text-align:left;margin-bottom:8px">
+          <label style="font-size:10px;color:var(--text-3)">Nama Kos</label>
+          <input id="kwNamaKos" type="text" value="${(b.kos && b.kos.nama_kos) || ''}" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;margin-top:3px;font-size:14px;font-weight:800;box-sizing:border-box">
         </div>
-        <div style="text-align:left;margin-bottom:14px">
-          <label style="font-size:12px;color:var(--text-3)">No. Kwitansi</label>
-          <input id="kwNomor" type="text" placeholder="Contoh ketik ...../...../....." style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin-top:6px;font-size:14px;box-sizing:border-box">
+        <div style="text-align:left;margin-bottom:8px">
+          <label style="font-size:10px;color:var(--text-3)">No. Kwitansi</label>
+          <input id="kwNomor" type="text" placeholder="Contoh ketik ...../...../....." style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;margin-top:3px;font-size:12px;box-sizing:border-box">
         </div>
-        <div style="background:var(--bg-2);border-radius:12px;padding:12px;margin-bottom:14px;text-align:left">
-          <label style="font-size:11px;color:var(--text-3)">Nama Pencari Kos</label>
-          <input id="kwNamaPenyewa" type="text" value="${b.nama_pemesan || ''}" style="width:100%;padding:8px 0;border:none;background:transparent;font-size:14px;font-weight:700;box-sizing:border-box;border-bottom:1px solid var(--border);margin-bottom:2px">
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:8px">ketik disini.</div>
-          <label style="font-size:11px;color:var(--text-3)">Kamar</label>
-          <input id="kwKamar" type="text" value="${(b.kamar && b.kamar.nomor_kamar) || ''}" style="width:100%;padding:8px 0;border:none;background:transparent;font-size:14px;font-weight:700;box-sizing:border-box;border-bottom:1px solid var(--border);margin-bottom:2px">
-          <div style="font-size:10px;color:var(--text-3)">ketik disini.</div>
+        <div style="background:var(--bg-2);border-radius:8px;padding:8px;margin-bottom:8px;text-align:left">
+          <label style="font-size:10px;color:var(--text-3)">Nama Pencari Kos</label>
+          <input id="kwNamaPenyewa" type="text" value="${b.nama_pemesan || ''}" style="width:100%;padding:4px 0;border:none;background:transparent;font-size:12px;font-weight:700;box-sizing:border-box;border-bottom:1px solid var(--border)">
+          <div style="font-size:9px;color:var(--text-3);margin-bottom:4px">ketik disini.</div>
+          <label style="font-size:10px;color:var(--text-3)">Kamar</label>
+          <input id="kwKamar" type="text" value="${(b.kamar && b.kamar.nomor_kamar) || ''}" style="width:100%;padding:4px 0;border:none;background:transparent;font-size:12px;font-weight:700;box-sizing:border-box;border-bottom:1px solid var(--border)">
+          <div style="font-size:9px;color:var(--text-3)">ketik disini.</div>
         </div>
         <div style="text-align:left">
-          <label style="font-size:12px;color:var(--text-3)">Jumlah Dibayar (Rp)</label>
-          <input id="kwJumlah" type="number" value="${b.total_bayar || ''}" placeholder="Contoh: ketik Rp 500000" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 12px;font-size:14px;box-sizing:border-box">
+          <label style="font-size:10px;color:var(--text-3)">Jumlah Dibayar (Rp)</label>
+          <input id="kwJumlah" type="number" value="${b.total_bayar || ''}" placeholder="Contoh: ketik Rp 500000" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;margin:3px 0 8px;font-size:12px;box-sizing:border-box">
 
-          <label style="font-size:12px;color:var(--text-3)">Untuk Pembayaran</label>
-          <input id="kwPeriode" type="text" placeholder="Contoh: Sewa bulan Agustus 2026" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 12px;font-size:14px;box-sizing:border-box">
+          <label style="font-size:10px;color:var(--text-3)">Untuk Pembayaran</label>
+          <input id="kwPeriode" type="text" placeholder="Contoh: Sewa bulan Agustus 2026" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;margin:3px 0 8px;font-size:12px;box-sizing:border-box">
 
-          <label style="font-size:12px;color:var(--text-3)">Tanggal Pembayaran</label>
-          <input id="kwTanggal" type="date" value="${new Date().toISOString().slice(0,10)}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 12px;font-size:14px;box-sizing:border-box">
+          <label style="font-size:10px;color:var(--text-3)">Tanggal Pembayaran</label>
+          <input id="kwTanggal" type="date" value="${new Date().toISOString().slice(0,10)}" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;margin:3px 0 8px;font-size:12px;box-sizing:border-box">
 
-          <label style="font-size:12px;color:var(--text-3)">Metode Pembayaran</label>
-          <select id="kwMetode" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 12px;font-size:14px;box-sizing:border-box">
+          <label style="font-size:10px;color:var(--text-3)">Metode Pembayaran</label>
+          <select id="kwMetode" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;margin:3px 0 8px;font-size:12px;box-sizing:border-box">
             <option value="COD">COD - Bayar Langsung</option>
             <option value="Transfer Bank">Transfer Bank</option>
             <option value="Lainnya">Lainnya</option>
           </select>
 
-          <label style="font-size:12px;color:var(--text-3)">Catatan (opsional)</label>
-          <textarea id="kwCatatan" placeholder="Catatan tambahan..." style="width:100%;min-height:60px;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 16px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>
+          <label style="font-size:10px;color:var(--text-3)">Catatan (opsional)</label>
+          <textarea id="kwCatatan" placeholder="Catatan tambahan..." style="width:100%;min-height:36px;padding:8px;border:1.5px solid var(--border);border-radius:8px;margin:3px 0 10px;font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>
         </div>
-        <button onclick="submitKwitansi('${bookingId}')" style="width:100%;padding:14px;background:var(--orange);border:none;border-radius:12px;color:white;font-weight:700;font-size:14px;margin-bottom:4px;cursor:pointer">Bukti Kwitansi</button>
-        <div style="text-align:center;font-size:11px;color:var(--text-3);margin-bottom:12px">Screenshot halaman ini</div>
+        <button onclick="submitKwitansi('${bookingId}')" style="width:100%;padding:11px;background:var(--orange);border:none;border-radius:10px;color:white;font-weight:700;font-size:13px;margin-bottom:3px;cursor:pointer">Bukti Kwitansi</button>
+        <div style="text-align:center;font-size:10px;color:var(--text-3);margin-bottom:8px">Screenshot halaman ini</div>
         <button onclick="closeKwitansiFormModal()" style="width:100%;padding:14px;background:transparent;border:none;color:var(--text-3);font-weight:600;font-size:14px;cursor:pointer">Batal</button>
       `;
     } catch (err) {
