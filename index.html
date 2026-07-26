@@ -2308,7 +2308,159 @@ function installPWA() {
   let pendingBookingId = null; // booking yang baru dibuat, dipakai di halaman payment
 
   // Buka halaman booking untuk kos yang sedang dilihat di Detail
-  // ===== Modal konfirmasi minat sebelum form booking (Alur B) =====
+  // ===== KWITANSI DIGITAL =====
+  let _kwitansiBookingCache = null;
+
+  async function showBuatKwitansi(bookingId) {
+    const modal = document.createElement('div');
+    modal.id = 'kwitansiFormModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:flex-end;justify-content:center';
+    modal.innerHTML = `
+      <div style="background:white;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:430px;max-height:85vh;overflow-y:auto">
+        <div style="font-size:16px;font-weight:800;margin-bottom:16px;text-align:center">🧾 Buat Kwitansi</div>
+        <div id="kwitansiFormBody" style="text-align:center;padding:20px;color:var(--text-3)">Memuat data booking...</div>
+      </div>`;
+    document.body.appendChild(modal);
+
+    try {
+      const { data: b, error } = await sbClient
+        .from('booking')
+        .select('*, kos(nama_kos), kamar(nomor_kamar)')
+        .eq('id', bookingId)
+        .single();
+      if (error) throw error;
+      _kwitansiBookingCache = b;
+
+      document.getElementById('kwitansiFormBody').innerHTML = `
+        <div style="background:var(--bg-2);border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px;text-align:left">
+          <div><b>${b.nama_pemesan || 'Penyewa'}</b></div>
+          <div style="color:var(--text-3)">${(b.kos && b.kos.nama_kos) || 'Kos'} • Kamar ${(b.kamar && b.kamar.nomor_kamar) || '-'}</div>
+        </div>
+        <div style="text-align:left">
+          <label style="font-size:12px;color:var(--text-3)">Jumlah Dibayar (Rp)</label>
+          <input id="kwJumlah" type="number" value="${b.total_bayar || ''}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 12px;font-size:14px;box-sizing:border-box">
+
+          <label style="font-size:12px;color:var(--text-3)">Untuk Pembayaran</label>
+          <input id="kwPeriode" type="text" placeholder="Contoh: Sewa bulan Agustus 2026" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 12px;font-size:14px;box-sizing:border-box">
+
+          <label style="font-size:12px;color:var(--text-3)">Tanggal Pembayaran</label>
+          <input id="kwTanggal" type="date" value="${new Date().toISOString().slice(0,10)}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 12px;font-size:14px;box-sizing:border-box">
+
+          <label style="font-size:12px;color:var(--text-3)">Metode Pembayaran</label>
+          <select id="kwMetode" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 12px;font-size:14px;box-sizing:border-box">
+            <option value="COD">COD - Bayar Langsung</option>
+            <option value="Transfer Bank">Transfer Bank</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+
+          <label style="font-size:12px;color:var(--text-3)">Catatan (opsional)</label>
+          <textarea id="kwCatatan" placeholder="Catatan tambahan..." style="width:100%;min-height:60px;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 16px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>
+        </div>
+        <button onclick="submitKwitansi('${bookingId}')" style="width:100%;padding:14px;background:var(--orange);border:none;border-radius:12px;color:white;font-weight:700;font-size:14px;margin-bottom:8px;cursor:pointer">Buat Kwitansi</button>
+        <button onclick="closeKwitansiFormModal()" style="width:100%;padding:14px;background:transparent;border:none;color:var(--text-3);font-weight:600;font-size:14px;cursor:pointer">Batal</button>
+      `;
+    } catch (err) {
+      console.error('Gagal memuat data booking:', err);
+      document.getElementById('kwitansiFormBody').innerHTML = '<div style="color:var(--red)">Gagal memuat data.</div>';
+    }
+  }
+
+  function closeKwitansiFormModal() {
+    const modal = document.getElementById('kwitansiFormModal');
+    if (modal) modal.remove();
+  }
+
+  async function submitKwitansi(bookingId) {
+    const b = _kwitansiBookingCache;
+    const jumlah = parseInt(document.getElementById('kwJumlah').value, 10);
+    const periode = document.getElementById('kwPeriode').value.trim();
+    const tanggal = document.getElementById('kwTanggal').value;
+    const metode = document.getElementById('kwMetode').value;
+    const catatan = document.getElementById('kwCatatan').value.trim();
+
+    if (!jumlah || jumlah <= 0) { alert('Isi jumlah dibayar dengan benar.'); return; }
+    if (!periode) { alert('Isi untuk pembayaran apa.'); return; }
+    if (!tanggal) { alert('Isi tanggal pembayaran.'); return; }
+
+    const nomorKwitansi = 'KW-' + tanggal.replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+
+    try {
+      const { error } = await sbClient.from('kwitansi').insert({
+        booking_id: bookingId,
+        kos_id: b.kos_id,
+        penyewa_id: b.penyewa_id,
+        pemilik_id: currentUser.id,
+        nomor_kwitansi: nomorKwitansi,
+        jumlah: jumlah,
+        untuk_periode: periode,
+        tanggal_bayar: tanggal,
+        metode_bayar: metode,
+        catatan: catatan || null
+      });
+      if (error) throw error;
+
+      closeKwitansiFormModal();
+      renderKwitansiReceipt({
+        nomor_kwitansi: nomorKwitansi,
+        jumlah, untuk_periode: periode, tanggal_bayar: tanggal, metode_bayar: metode, catatan,
+        nama_penyewa: b.nama_pemesan,
+        nama_kos: (b.kos && b.kos.nama_kos) || 'Kos',
+        nomor_kamar: (b.kamar && b.kamar.nomor_kamar) || '-'
+      });
+    } catch (err) {
+      console.error('Gagal membuat kwitansi:', err);
+      alert('Gagal membuat kwitansi, coba lagi.');
+    }
+  }
+
+  function renderKwitansiReceipt(kw) {
+    const modal = document.createElement('div');
+    modal.id = 'kwitansiReceiptModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
+    const tgl = new Date(kw.tanggal_bayar).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    modal.innerHTML = `
+      <div style="background:white;border-radius:16px;padding:24px;width:100%;max-width:380px;max-height:90vh;overflow-y:auto">
+        <div style="text-align:center;margin-bottom:16px;padding-bottom:16px;border-bottom:2px dashed var(--border)">
+          <div style="font-size:28px">🧾</div>
+          <div style="font-size:16px;font-weight:800;margin-top:4px">KWITANSI PEMBAYARAN</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${kw.nomor_kwitansi}</div>
+        </div>
+        <div style="font-size:13px;line-height:2.2">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">Diterima dari</span><b>${kw.nama_penyewa || '-'}</b></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">Kos / Kamar</span><b>${kw.nama_kos} / ${kw.nomor_kamar}</b></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">Untuk</span><b style="text-align:right;max-width:60%">${kw.untuk_periode}</b></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">Tanggal</span><b>${tgl}</b></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-3)">Metode</span><b>${kw.metode_bayar}</b></div>
+        </div>
+        ${kw.catatan ? `<div style="margin-top:10px;font-size:12px;color:var(--text-3);font-style:italic">"${kw.catatan}"</div>` : ''}
+        <div style="margin-top:16px;padding-top:16px;border-top:2px dashed var(--border);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;font-weight:700">Total Dibayar</span>
+          <span style="font-size:20px;font-weight:800;color:var(--orange)">${formatRupiah(kw.jumlah)}</span>
+        </div>
+        <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--text-3)">Kwitansi digital ini sah tanpa tanda tangan basah — KosKu Solo</div>
+        <button onclick="document.getElementById('kwitansiReceiptModal').remove()" style="width:100%;padding:12px;background:var(--bg-2);border:none;border-radius:10px;color:var(--text);font-weight:700;font-size:13px;margin-top:16px;cursor:pointer">Tutup (Screenshot untuk simpan)</button>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+
+  function viewKwitansiById(bookingId) {
+    const kw = riwayatKwitansiMap[bookingId];
+    const b = riwayatBookingData.find(x => x.id === bookingId);
+    if (!kw || !b) return;
+    renderKwitansiReceipt({
+      nomor_kwitansi: kw.nomor_kwitansi,
+      jumlah: kw.jumlah,
+      untuk_periode: kw.untuk_periode,
+      tanggal_bayar: kw.tanggal_bayar,
+      metode_bayar: kw.metode_bayar,
+      catatan: kw.catatan,
+      nama_penyewa: b.nama_pemesan || (currentUserProfile && currentUserProfile.nama_lengkap) || '-',
+      nama_kos: (b.kos && b.kos.nama_kos) || 'Kos',
+      nomor_kamar: (b.kamar && b.kamar.nomor_kamar) || '-'
+    });
+  }
+
+
   function showBookingConfirmModal() {
     if (!currentUser) {
       alert('Silakan login dahulu untuk melakukan booking.');
@@ -3748,7 +3900,7 @@ function installPWA() {
         .from('booking')
         .select('*, kamar(nomor_kamar), kos(nama_kos)')
         .in('kos_id', kosIds)
-        .in('status', ['menunggu', 'diterima'])
+        .in('status', ['menunggu', 'diterima', 'aktif', 'selesai'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -3809,9 +3961,14 @@ function installPWA() {
         const diffH = Math.round((now - tgl) / 3600000);
         const waktu = diffH < 1 ? 'Baru saja' : diffH < 24 ? `${diffH} jam lalu` : `${Math.round(diffH/24)} hari lalu`;
 
-        const statusBadge = b.status === 'menunggu'
-          ? '<div style="margin-left:auto;background:#FEF9C3;color:#CA8A04;font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px">Menunggu</div>'
-          : '<div style="margin-left:auto;background:#DCFCE7;color:#16A34A;font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px">Diterima</div>';
+        const statusBadgeMap = {
+          menunggu: { label: 'Menunggu', bg: '#FEF9C3', color: '#CA8A04' },
+          diterima: { label: 'Diterima', bg: '#DCFCE7', color: '#16A34A' },
+          aktif: { label: 'Aktif', bg: '#DBEAFE', color: '#2563EB' },
+          selesai: { label: 'Selesai', bg: '#F1F5F9', color: '#64748B' }
+        };
+        const sb = statusBadgeMap[b.status] || { label: b.status, bg: '#F1F5F9', color: '#64748B' };
+        const statusBadge = `<div style="margin-left:auto;background:${sb.bg};color:${sb.color};font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px">${sb.label}</div>`;
 
         const namaKos = b.kos ? b.kos.nama_kos : '-';
         const nomorKamar = b.kamar ? b.kamar.nomor_kamar : '-';
@@ -3845,6 +4002,9 @@ function installPWA() {
               ${b.status === 'menunggu' ? `
                 <button class="btn-terima" onclick="updateStatusBooking('${b.id}','diterima')">✓ Terima</button>
                 <button class="btn-tolak" onclick="updateStatusBooking('${b.id}','ditolak')">✗ Tolak</button>
+              ` : ''}
+              ${['diterima', 'aktif', 'selesai'].includes(b.status) ? `
+                <button class="btn-terima" style="background:#334155" onclick="showBuatKwitansi('${b.id}')">🧾 Buat Kwitansi</button>
               ` : ''}
               <button class="btn-chat-req" onclick="openChatForPartner('${b.kos_id}','${b.penyewa_id}')">💬</button>
             </div>
@@ -4746,6 +4906,7 @@ function installPWA() {
 
   // ===== RIWAYAT SEWA (Pencari Kos) =====
   let riwayatBookingData = [];
+  let riwayatKwitansiMap = {};
   let riwayatCurrentTab = 'aktif';
 
   async function loadRiwayatSewa() {
@@ -4768,6 +4929,15 @@ function installPWA() {
         .order('created_at', { ascending: false });
       if (error) throw error;
       riwayatBookingData = data || [];
+
+      // Ambil kwitansi yang sudah dibuat pemilik untuk booking-booking ini
+      riwayatKwitansiMap = {};
+      if (riwayatBookingData.length) {
+        const bookingIds = riwayatBookingData.map(b => b.id);
+        const { data: kwList } = await sbClient.from('kwitansi').select('*').in('booking_id', bookingIds);
+        (kwList || []).forEach(k => { riwayatKwitansiMap[k.booking_id] = k; });
+      }
+
       renderRiwayatList(riwayatCurrentTab);
     } catch (err) {
       console.error('Gagal memuat riwayat sewa:', err);
@@ -4840,6 +5010,9 @@ function installPWA() {
         </div>
         ${b.status === 'diterima' ? `
           <button onclick="showKonfirmasiPembayaran('${b.id}')" style="width:100%;margin-top:12px;padding:11px;background:var(--orange);border:none;border-radius:10px;color:white;font-weight:700;font-size:13px;cursor:pointer">Konfirmasi & Lanjutkan →</button>
+        ` : ''}
+        ${riwayatKwitansiMap[b.id] ? `
+          <button onclick="viewKwitansiById('${b.id}')" style="width:100%;margin-top:8px;padding:11px;background:var(--bg-2);border:none;border-radius:10px;color:var(--text);font-weight:700;font-size:13px;cursor:pointer">🧾 Lihat Kwitansi</button>
         ` : ''}
       </div>`;
   }
