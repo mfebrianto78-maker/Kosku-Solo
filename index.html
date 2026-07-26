@@ -2336,9 +2336,17 @@ function installPWA() {
           <label style="font-size:12px;color:var(--text-3)">Nama Kos</label>
           <input id="kwNamaKos" type="text" value="${(b.kos && b.kos.nama_kos) || ''}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin-top:6px;font-size:17px;font-weight:800;box-sizing:border-box">
         </div>
-        <div style="background:var(--bg-2);border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px;text-align:left">
-          <div><b>${b.nama_pemesan || 'Penyewa'}</b></div>
-          <div style="color:var(--text-3)">Kamar ${(b.kamar && b.kamar.nomor_kamar) || '-'}</div>
+        <div style="text-align:left;margin-bottom:14px">
+          <label style="font-size:12px;color:var(--text-3)">No. Kwitansi</label>
+          <input id="kwNomor" type="text" placeholder="Contoh ketik ...../...../....." style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin-top:6px;font-size:14px;box-sizing:border-box">
+        </div>
+        <div style="background:var(--bg-2);border-radius:12px;padding:12px;margin-bottom:14px;text-align:left">
+          <label style="font-size:11px;color:var(--text-3)">Nama Pencari Kos</label>
+          <input id="kwNamaPenyewa" type="text" value="${b.nama_pemesan || ''}" style="width:100%;padding:8px 0;border:none;background:transparent;font-size:14px;font-weight:700;box-sizing:border-box;border-bottom:1px solid var(--border);margin-bottom:2px">
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:8px">ketik disini.</div>
+          <label style="font-size:11px;color:var(--text-3)">Kamar</label>
+          <input id="kwKamar" type="text" value="${(b.kamar && b.kamar.nomor_kamar) || ''}" style="width:100%;padding:8px 0;border:none;background:transparent;font-size:14px;font-weight:700;box-sizing:border-box;border-bottom:1px solid var(--border);margin-bottom:2px">
+          <div style="font-size:10px;color:var(--text-3)">ketik disini.</div>
         </div>
         <div style="text-align:left">
           <label style="font-size:12px;color:var(--text-3)">Jumlah Dibayar (Rp)</label>
@@ -2378,6 +2386,9 @@ function installPWA() {
   async function submitKwitansi(bookingId) {
     const b = _kwitansiBookingCache;
     const namaKosInput = document.getElementById('kwNamaKos').value.trim();
+    const nomorInput = document.getElementById('kwNomor').value.trim();
+    const namaPenyewaInput = document.getElementById('kwNamaPenyewa').value.trim();
+    const kamarInput = document.getElementById('kwKamar').value.trim();
     const jumlah = parseInt(document.getElementById('kwJumlah').value, 10);
     const periode = document.getElementById('kwPeriode').value.trim();
     const tanggal = document.getElementById('kwTanggal').value;
@@ -2389,7 +2400,7 @@ function installPWA() {
     if (!periode) { alert('Isi untuk pembayaran apa.'); return; }
     if (!tanggal) { alert('Isi tanggal pembayaran.'); return; }
 
-    const nomorKwitansi = 'KW-' + tanggal.replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+    const nomorKwitansi = nomorInput || ('KW-' + tanggal.replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase());
 
     try {
       const { error } = await sbClient.from('kwitansi').insert({
@@ -2410,9 +2421,9 @@ function installPWA() {
       renderKwitansiReceipt({
         nomor_kwitansi: nomorKwitansi,
         jumlah, untuk_periode: periode, tanggal_bayar: tanggal, metode_bayar: metode, catatan,
-        nama_penyewa: b.nama_pemesan,
+        nama_penyewa: namaPenyewaInput || b.nama_pemesan,
         nama_kos: namaKosInput,
-        nomor_kamar: (b.kamar && b.kamar.nomor_kamar) || '-'
+        nomor_kamar: kamarInput || (b.kamar && b.kamar.nomor_kamar) || '-'
       });
     } catch (err) {
       console.error('Gagal membuat kwitansi:', err);
