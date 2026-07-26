@@ -1616,6 +1616,13 @@ function installPWA() {
           🔔
         </div>
       </div>
+
+      <div style="padding-bottom:8px" id="ownerRecentBooking">
+        <div style="background:rgba(255,255,255,0.15);border-radius:16px;padding:16px;text-align:center;color:rgba(255,255,255,0.8);font-size:13px">
+          Memuat pemesanan...
+        </div>
+      </div>
+
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-val">2</div>
@@ -1677,13 +1684,6 @@ function installPWA() {
         <div class="owner-menu-icon">⭐</div>
         <div class="owner-menu-label">Review</div>
         <div class="owner-menu-badge">4.8 Rating</div>
-      </div>
-    </div>
-
-    <div style="padding:0 16px 8px;font-size:17px;font-weight:800;color:var(--text);margin-top:4px">Pemesanan Terbaru</div>
-    <div style="padding:0 16px 30px" id="ownerRecentBooking">
-      <div style="background:white;border-radius:16px;padding:20px;text-align:center;color:var(--text-3);font-size:13px;box-shadow:var(--shadow)">
-        Memuat pemesanan...
       </div>
     </div>
 
@@ -3081,7 +3081,7 @@ function installPWA() {
             <div style="display:flex;gap:8px">
               <button class="btn-terima" onclick="updateStatusBooking('${b.id}','diterima');loadRecentBookingDashboard()">✓ Terima</button>
               <button class="btn-tolak" onclick="updateStatusBooking('${b.id}','ditolak');loadRecentBookingDashboard()">✗ Tolak</button>
-              <button class="btn-chat-req" onclick="showChat()">💬 Chat</button>
+              <button class="btn-chat-req" onclick="openChatForPartner('${b.kos_id}','${b.penyewa_id}')">💬 Chat</button>
             </div>
           </div>`;
       }).join('') + `
