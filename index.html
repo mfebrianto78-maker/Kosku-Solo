@@ -2096,7 +2096,16 @@ function installPWA() {
   const SUPABASE_URL = 'https://kyytbtkeivjzfzxgzzdm.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_czOkAsxCHGfXYgabjRPoPA_zNkv3OrH';
   // Note: variable renamed to sbClient to avoid conflict with the supabase-js CDN global namespace
-  const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // persistSession: simpan sesi login di localStorage supaya tidak hilang saat app ditutup/dibuka lagi
+  // autoRefreshToken: token sesi otomatis diperbarui sebelum expired, jadi user tidak perlu login ulang
+  // detectSessionInUrl: false karena app ini tidak pakai OAuth redirect/magic link di URL
+  const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false
+    }
+  });
 
   let currentUser = null; // logged in user session
   let currentUserProfile = null; // row from profiles table
@@ -3523,6 +3532,7 @@ function installPWA() {
 
   // Logout
   async function handleLogout() {
+    if (!confirm('Yakin mau keluar dari akun kamu?')) return;
     try { await sbClient.auth.signOut(); } catch (err) { console.error(err); }
     currentUser = null;
     currentUserProfile = null;
