@@ -5314,6 +5314,12 @@ function installPWA() {
       container.scrollTop = container.scrollHeight;
     } catch (err) {
       console.error('Gagal load chat:', err);
+      container.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;color:var(--text-3)">
+          <div style="font-size:40px;margin-bottom:10px">⚠️</div>
+          <div style="font-size:14px;font-weight:600">Gagal memuat pesan</div>
+          <div style="font-size:12px;margin-top:4px">Coba kembali lalu buka chat ini lagi</div>
+        </div>`;
     }
   }
 
@@ -5544,14 +5550,17 @@ function installPWA() {
         return;
       }
 
-      // Group by kos_id, ambil pesan terakhir tiap kos
+      // Group by kos_id + lawan bicara (BUKAN kos_id saja) — supaya percakapan dari
+      // penyewa yang berbeda soal kos yang sama tidak saling menutupi/hilang
       const chatMap = {};
       messages.forEach(msg => {
-        if (!chatMap[msg.kos_id]) chatMap[msg.kos_id] = msg;
+        const partnerId = msg.sender_id === currentUser.id ? msg.receiver_id : msg.sender_id;
+        const key = `${msg.kos_id}::${partnerId}`;
+        if (!chatMap[key]) chatMap[key] = { msg, partnerId };
       });
 
       // Ambil data kos untuk tiap percakapan
-      const kosIds = Object.keys(chatMap).filter(Boolean);
+      const kosIds = [...new Set(Object.values(chatMap).map(c => c.msg.kos_id))].filter(Boolean);
       let kosMap = {};
       if (kosIds.length) {
         const { data: kosList } = await sbClient
@@ -5559,17 +5568,32 @@ function installPWA() {
         (kosList || []).forEach(k => { kosMap[k.id] = k; });
       }
 
-      container.innerHTML = Object.values(chatMap).map(msg => {
+      // Untuk pemilik: ambil nama tiap lawan bicara (penyewa) supaya tiap percakapan bisa dibedakan
+      const isPemilikView = currentUserProfile && currentUserProfile.role === 'pemilik';
+      let partnerMap = {};
+      if (isPemilikView) {
+        const partnerIds = [...new Set(Object.values(chatMap).map(c => c.partnerId))].filter(Boolean);
+        if (partnerIds.length) {
+          const { data: partnerProfiles } = await sbClient
+            .from('profiles').select('id, nama_lengkap').in('id', partnerIds);
+          (partnerProfiles || []).forEach(p => { partnerMap[p.id] = p; });
+        }
+      }
+
+      container.innerHTML = Object.values(chatMap).map(({ msg, partnerId }) => {
         const kos = kosMap[msg.kos_id] || {};
         const isSelf = msg.sender_id === currentUser.id;
-        const namaChat = kos.nama_kos || 'Kos';
+        const partnerNama = isPemilikView ? (partnerMap[partnerId] && partnerMap[partnerId].nama_lengkap) : null;
+        const namaChat = isPemilikView
+          ? (partnerNama ? `${partnerNama} · ${kos.nama_kos || 'Kos'}` : (kos.nama_kos || 'Kos'))
+          : (kos.nama_kos || 'Kos');
         const preview = (isSelf ? 'Anda: ' : '') + (msg.pesan || '');
         const time = new Date(msg.created_at);
         const timeStr = `${time.getHours()}:${String(time.getMinutes()).padStart(2,'0')}`;
         const unread = !msg.is_read && !isSelf;
 
         return `
-          <div class="chat-list-item" onclick="openChatFromList('${msg.kos_id}')" style="${unread ? 'border-left:3px solid var(--orange)' : ''}">
+          <div class="chat-list-item" onclick="openChatFromList('${msg.kos_id}','${partnerId || ''}')" style="${unread ? 'border-left:3px solid var(--orange)' : ''}">
             <div class="chat-avatar" style="border-radius:14px;flex-shrink:0">🏠</div>
             <div style="flex:1;min-width:0">
               <div style="display:flex;justify-content:space-between;align-items:center">
@@ -5588,7 +5612,9 @@ function installPWA() {
   }
 
   // Buka percakapan dari daftar chat
-  async function openChatFromList(kosId) {
+  // partnerId dikirim langsung dari daftar chat (loadChatList) — tidak query ulang ke DB,
+  // supaya tidak ada titik gagal/race yang bikin halaman chat tampil kosong
+  async function openChatFromList(kosId, partnerId) {
     // Cari data kos dari allKosData
     const kos = allKosData.find(k => k.id === kosId);
     if (kos) {
@@ -5600,18 +5626,7 @@ function installPWA() {
     const isPemilikView = currentUserProfile && currentUserProfile.role === 'pemilik';
 
     if (isPemilikView) {
-      // Cari lawan bicara (pencari) terakhir untuk kos ini — bukan pemilik sendiri
-      const { data: lastMsg } = await sbClient
-        .from('chat_messages')
-        .select('sender_id, receiver_id')
-        .eq('kos_id', kosId)
-        .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      currentChatPartnerId = lastMsg
-        ? (lastMsg.sender_id === currentUser.id ? lastMsg.receiver_id : lastMsg.sender_id)
-        : null;
+      currentChatPartnerId = partnerId || null;
     } else if (kos) {
       const nameEl = document.getElementById('chatHeaderName');
       const avatarEl = document.getElementById('chatHeaderAvatar');
