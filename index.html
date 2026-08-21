@@ -2129,6 +2129,19 @@ function installPWA() {
     return 'Rp ' + Number(num).toLocaleString('id-ID');
   }
 
+  // Kos dianggap "Terverifikasi" otomatis kalau sudah punya foto, lokasi peta,
+  // dan minimal 1 booking yang sudah selesai (bukti kos ini nyata & pernah dihuni)
+  function isKosVerified(kos) {
+    const adaFoto = kos.foto_urls && kos.foto_urls.length > 0;
+    const adaLokasi = !!(kos.latitude && kos.longitude);
+    const adaBookingSelesai = (kos.jumlah_booking || 0) >= 1;
+    return adaFoto && adaLokasi && adaBookingSelesai;
+  }
+
+  function verifiedBadgeHtml(inline) {
+    return `<span style="display:inline-flex;align-items:center;gap:2px;background:#E8F5E9;color:#2E7D32;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;${inline ? 'margin-left:6px;vertical-align:middle' : ''}">✅ Terverifikasi</span>`;
+  }
+
   // Render satu kos-card (untuk Dashboard)
   function renderKosCard(kos) {
     const emoji = kos.jenis_kos === 'Putra' ? '🪑' : kos.jenis_kos === 'Eksklusif' ? '🏠' : '🛏️';
@@ -2145,7 +2158,7 @@ function installPWA() {
           <div class="fav-btn" onclick="toggleFavorite('${kos.id}', event, this)" style="position:absolute;top:10px;right:10px">${favoritKosIds.has(kos.id) ? '❤️' : '🤍'}</div>
         </div>
         <div class="kos-card-body">
-          <div class="kos-name">${kos.nama_kos}</div>
+          <div class="kos-name">${kos.nama_kos}${isKosVerified(kos) ? verifiedBadgeHtml(true) : ''}</div>
           <div class="kos-addr">📍 ${kos.alamat}</div>
           <div class="kos-footer">
             <div class="kos-price">${formatRupiah(kos.harga_per_bulan)}<span>/bln</span></div>
@@ -2166,7 +2179,7 @@ function installPWA() {
       <div class="kos-list-card" onclick="openDetail('${kos.id}')">
         <div class="kos-list-img">${imgContent}</div>
         <div class="kos-list-info">
-          <div class="kos-list-name">${kos.nama_kos}</div>
+          <div class="kos-list-name">${kos.nama_kos}${isKosVerified(kos) ? verifiedBadgeHtml(true) : ''}</div>
           <div class="kos-list-addr">📍 ${kos.alamat}</div>
           <div class="kos-list-price">${formatRupiah(kos.harga_per_bulan)}<span style="font-size:11px;color:var(--text-3);font-weight:400">/bln</span></div>
           <div class="kos-list-footer">
@@ -2243,7 +2256,7 @@ function installPWA() {
   // Render halaman Detail Kos berdasarkan data dari Supabase
   function renderDetailScreen(kos) {
     const emoji = kos.jenis_kos === 'Putra' ? '🪑' : kos.jenis_kos === 'Eksklusif' ? '🏠' : '🛏️';
-    document.querySelector('#screen-detail .detail-name').textContent = kos.nama_kos;
+    document.querySelector('#screen-detail .detail-name').innerHTML = kos.nama_kos + (isKosVerified(kos) ? verifiedBadgeHtml(true) : '');
     document.querySelector('#screen-detail .detail-addr').textContent = '📍 ' + kos.alamat;
     document.querySelector('#screen-detail .detail-price').innerHTML = formatRupiah(kos.harga_per_bulan) + '<span>/bulan</span>';
     document.querySelector('#screen-detail .rating-val').textContent = kos.rating;
@@ -2978,6 +2991,17 @@ function installPWA() {
       const jumlahKamar = (kos.kamar || []).length;
       const statusClass = kos.status === 'aktif' ? 'kk-status-aktif' : 'kk-status-nonaktif';
       const statusLabel = kos.status === 'aktif' ? '✓ Aktif' : '○ Nonaktif';
+
+      // Info status verifikasi otomatis untuk pemilik
+      const verified = isKosVerified(kos);
+      const syaratKurang = [];
+      if (!(kos.foto_urls && kos.foto_urls.length > 0)) syaratKurang.push('foto');
+      if (!(kos.latitude && kos.longitude)) syaratKurang.push('lokasi peta');
+      if (!((kos.jumlah_booking || 0) >= 1)) syaratKurang.push('booking selesai');
+      const verifInfo = verified
+        ? `<div style="margin-top:6px">${verifiedBadgeHtml(false)}</div>`
+        : `<div style="margin-top:6px;font-size:11px;color:var(--text-3)">Belum terverifikasi — lengkapi ${syaratKurang.join(', ')}</div>`;
+
       return `
         <div class="kk-card">
           <div class="kk-card-top">
@@ -2986,6 +3010,7 @@ function installPWA() {
               <div class="kk-name">${kos.nama_kos}</div>
               <div class="kk-addr">📍 ${kos.alamat}</div>
               <div class="kk-meta">${formatRupiah(kos.harga_per_bulan)}/bln • ${jumlahKamar} kamar</div>
+              ${verifInfo}
             </div>
             <div class="kk-status-toggle ${statusClass}" onclick="toggleStatusKos('${kos.id}', '${kos.status}')">${statusLabel}</div>
           </div>
@@ -3798,7 +3823,7 @@ function installPWA() {
       <div class="kos-list-card" onclick="openDetail('${kos.id}')">
         <div class="kos-list-img">${imgContent}</div>
         <div class="kos-list-info">
-          <div class="kos-list-name">${kos.nama_kos}</div>
+          <div class="kos-list-name">${kos.nama_kos}${isKosVerified(kos) ? verifiedBadgeHtml(true) : ''}</div>
           <div class="kos-list-addr">📍 ${kos.alamat}</div>
           <div class="kos-list-price">${formatRupiah(kos.harga_per_bulan)}<span style="font-size:11px;color:var(--text-3);font-weight:400">/bln</span></div>
           <div class="kos-list-footer">
