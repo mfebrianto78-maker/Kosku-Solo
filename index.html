@@ -4114,6 +4114,9 @@ function installPWA() {
                 <button class="btn-terima" onclick="updateStatusBooking('${b.id}','diterima')">✓ Terima</button>
                 <button class="btn-tolak" onclick="updateStatusBooking('${b.id}','ditolak')">✗ Tolak</button>
               ` : ''}
+              ${b.status === 'aktif' ? `
+                <button class="btn-terima" style="background:#16A34A" onclick="selesaikanBooking('${b.id}')">✅ Tandai Selesai</button>
+              ` : ''}
               ${['diterima', 'aktif', 'selesai'].includes(b.status) ? `
                 <button class="btn-terima" style="background:#334155" onclick="showBuatKwitansi('${b.id}')">🧾 Buat Kwitansi</button>
               ` : ''}
@@ -4219,6 +4222,61 @@ function installPWA() {
   function closePencariProfile() {
     const modal = document.getElementById('pencariProfileModal');
     if (modal) modal.remove();
+  }
+
+  // Pemilik menandai booking sebagai Selesai (masa sewa berakhir dengan baik).
+  // Ini juga menambah hitungan "booking selesai" pada kos (dipakai untuk syarat
+  // Kos Terverifikasi & label "Xx disewa") serta riwayat baik pada profil penyewa.
+  async function selesaikanBooking(bookingId) {
+    if (!confirm('Tandai booking ini sebagai Selesai? Masa sewa dianggap sudah berakhir.')) return;
+    try {
+      const { data: booking } = await sbClient
+        .from('booking')
+        .select('*, kos(nama_kos, jumlah_booking)')
+        .eq('id', bookingId)
+        .single();
+      if (!booking) throw new Error('Booking tidak ditemukan');
+
+      const { error } = await sbClient
+        .from('booking')
+        .update({ status: 'selesai' })
+        .eq('id', bookingId);
+      if (error) throw error;
+
+      // Tambah hitungan booking selesai pada kos
+      const jumlahSekarang = (booking.kos && booking.kos.jumlah_booking) || 0;
+      await sbClient
+        .from('kos')
+        .update({ jumlah_booking: jumlahSekarang + 1 })
+        .eq('id', booking.kos_id);
+
+      // Tambah riwayat baik pada profil penyewa
+      if (booking.penyewa_id) {
+        const { data: profile } = await sbClient
+          .from('profiles')
+          .select('booking_ok_count')
+          .eq('id', booking.penyewa_id)
+          .single();
+        const okCount = (profile && profile.booking_ok_count) || 0;
+        await sbClient
+          .from('profiles')
+          .update({ booking_ok_count: okCount + 1 })
+          .eq('id', booking.penyewa_id);
+
+        const namaKos = booking.kos ? booking.kos.nama_kos : 'Kos';
+        await kirimNotifikasi(
+          booking.penyewa_id,
+          '🎉 Masa Sewa Selesai',
+          `Booking Anda untuk ${namaKos} telah ditandai selesai oleh pemilik. Terima kasih sudah menyewa!`,
+          'booking'
+        );
+      }
+
+      loadBookingMasuk();
+      loadKosData();
+    } catch (err) {
+      alert('Gagal menandai booking selesai: ' + (err.message || ''));
+    }
   }
 
   async function updateStatusBooking(bookingId, status) {
