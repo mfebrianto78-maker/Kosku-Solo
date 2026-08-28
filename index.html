@@ -2286,8 +2286,9 @@ function installPWA() {
         photosEl.innerHTML = `
           <div id="detailPhotoSlider" style="width:100%;height:100%;position:relative;overflow:hidden">
             ${fotoUrls.map((url, i) => `
-              <img src="${url}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;transition:opacity 0.4s;opacity:${i===0?1:0}" data-idx="${i}">
+              <img src="${url}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;transition:opacity 0.4s;opacity:${i===0?1:0};cursor:pointer" data-idx="${i}" onclick="openPhotoLightbox(${i})">
             `).join('')}
+            <img src="icon-192.png" style="position:absolute;bottom:44px;right:12px;width:32px;height:32px;opacity:0.85;pointer-events:none;z-index:5;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5))">
           </div>
           <div class="detail-back" onclick="showSearch()" style="position:absolute;top:52px;left:16px;z-index:10">←</div>
           <div class="photo-count" style="position:absolute;bottom:14px;right:14px;z-index:10" onclick="nextDetailPhoto()">📷 <span id="detailPhotoCount">1</span>/${fotoUrls.length}</div>`;
@@ -2363,6 +2364,59 @@ function installPWA() {
         })
       }).addTo(window._detailMap).bindPopup(kos.nama_kos).openPopup();
     }, 400);
+  }
+
+  // ===== LIGHTBOX FOTO KOS (tampil penuh saat diklik) =====
+  let lightboxPhotos = [];
+  let lightboxIndex = 0;
+  let lightboxTouchStartX = 0;
+
+  function openPhotoLightbox(idx) {
+    lightboxPhotos = (selectedKos && selectedKos.foto_urls) || [];
+    if (!lightboxPhotos.length) return;
+    lightboxIndex = idx || 0;
+
+    let box = document.getElementById('photoLightbox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'photoLightbox';
+      box.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:2000;display:flex;align-items:center;justify-content:center;touch-action:pan-y';
+      box.innerHTML = `
+        <div id="lightboxCloseBtn" style="position:absolute;top:44px;right:16px;width:40px;height:40px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:22px;z-index:10">✕</div>
+        <div id="lightboxCounter" style="position:absolute;top:52px;left:20px;color:white;font-size:13px;font-weight:600;background:rgba(255,255,255,0.15);padding:5px 14px;border-radius:50px;z-index:10"></div>
+        <img id="lightboxImg" style="width:100%;height:100%;object-fit:contain">
+        <div id="lightboxPrevBtn" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:white;font-size:26px;z-index:10">‹</div>
+        <div id="lightboxNextBtn" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:white;font-size:26px;z-index:10">›</div>
+      `;
+      document.body.appendChild(box);
+      document.getElementById('lightboxCloseBtn').onclick = closePhotoLightbox;
+      document.getElementById('lightboxPrevBtn').onclick = () => lightboxNav(-1);
+      document.getElementById('lightboxNextBtn').onclick = () => lightboxNav(1);
+      box.addEventListener('touchstart', e => { lightboxTouchStartX = e.touches[0].clientX; });
+      box.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - lightboxTouchStartX;
+        if (Math.abs(dx) > 40) lightboxNav(dx > 0 ? -1 : 1);
+      });
+    }
+    box.style.display = 'flex';
+    lightboxRender();
+  }
+
+  function lightboxRender() {
+    const img = document.getElementById('lightboxImg');
+    const counter = document.getElementById('lightboxCounter');
+    if (img) img.src = lightboxPhotos[lightboxIndex];
+    if (counter) counter.textContent = `${lightboxIndex + 1}/${lightboxPhotos.length}`;
+  }
+
+  function lightboxNav(dir) {
+    lightboxIndex = (lightboxIndex + dir + lightboxPhotos.length) % lightboxPhotos.length;
+    lightboxRender();
+  }
+
+  function closePhotoLightbox() {
+    const box = document.getElementById('photoLightbox');
+    if (box) box.style.display = 'none';
   }
 
   // Slider foto di halaman detail
