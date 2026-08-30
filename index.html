@@ -192,7 +192,7 @@
   .nav-dot {
     position:relative;
   }
-  .nav-dot::after {
+  .nav-dot.has-unread::after {
     content:''; position:absolute; top:-2px; right:-2px;
     width:8px; height:8px; background:var(--orange); border-radius:50%;
   }
@@ -1078,7 +1078,7 @@ function installPWA() {
         <div class="nav-label">Favorit</div>
       </div>
       <div class="nav-item" onclick="showChatList()">
-        <div class="nav-icon nav-dot">💬</div>
+        <div class="nav-icon nav-dot" data-chat-dot>💬</div>
         <div class="nav-label">Pesan</div>
       </div>
       <div class="nav-item" onclick="showProfil()">
@@ -1214,7 +1214,7 @@ function installPWA() {
         <div class="nav-icon">❤️</div><div class="nav-label">Favorit</div>
       </div>
       <div class="nav-item" onclick="showChatList()">
-        <div class="nav-icon nav-dot">💬</div><div class="nav-label">Pesan</div>
+        <div class="nav-icon nav-dot" data-chat-dot>💬</div><div class="nav-label">Pesan</div>
       </div>
       <div class="nav-item" onclick="showProfil()">
         <div class="nav-icon">👤</div><div class="nav-label">Akun</div>
@@ -1408,7 +1408,7 @@ function installPWA() {
       <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
       <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
       <div class="nav-item active"><div class="nav-icon">❤️</div><div class="nav-label" style="color:var(--orange)">Favorit</div></div>
-      <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot">💬</div><div class="nav-label">Pesan</div></div>
+      <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot" data-chat-dot>💬</div><div class="nav-label">Pesan</div></div>
       <div class="nav-item" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label">Akun</div></div>
     </div>
   </div>
@@ -1736,7 +1736,7 @@ function installPWA() {
 
     <div class="bottom-nav">
       <div class="nav-item active"><div class="nav-icon">🏠</div><div class="nav-label" style="color:var(--orange)">Beranda</div></div>
-      <div class="nav-item" onclick="showBookingMasuk()"><div class="nav-icon nav-dot">📋</div><div class="nav-label">Booking</div></div>
+      <div class="nav-item" onclick="showBookingMasuk()"><div class="nav-icon nav-dot has-unread">📋</div><div class="nav-label">Booking</div></div>
       <div class="nav-item" onclick="showKeuangan()"><div class="nav-icon">💰</div><div class="nav-label">Keuangan</div></div>
       <div class="nav-item" onclick="showChatList()"><div class="nav-icon">💬</div><div class="nav-label">Chat</div></div>
       <div class="nav-item" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label">Akun</div></div>
@@ -3592,6 +3592,7 @@ function installPWA() {
       }
       // Mulai polling notifikasi setelah login
       startNotifPolling();
+      updateChatNavDots();
       // Cek notif awal langsung
       setTimeout(async () => {
         try {
@@ -4127,7 +4128,7 @@ function installPWA() {
         <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
         <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
         <div class="nav-item" onclick="showFavorit()"><div class="nav-icon">❤️</div><div class="nav-label">Favorit</div></div>
-        <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot">💬</div><div class="nav-label">Pesan</div></div>
+        <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot" data-chat-dot>💬</div><div class="nav-label">Pesan</div></div>
         <div class="nav-item active"><div class="nav-icon">👤</div><div class="nav-label" style="color:var(--orange)">Akun</div></div>`;
     }
   }
@@ -4836,6 +4837,7 @@ function installPWA() {
           .eq('is_read', false);
         updateNotifBadge(data ? data.length : 0);
       } catch (err) { /* silent */ }
+      updateChatNavDots();
     }, 30000); // 30 detik
   }
 
@@ -5521,6 +5523,36 @@ function installPWA() {
   }
 
   // Load pesan dari database
+  // Tandai semua pesan masuk pada percakapan yang sedang dibuka sebagai sudah dibaca
+  async function markConversationRead() {
+    if (!currentUser || !currentChatKosId) return;
+    try {
+      let q = sbClient.from('chat_messages').update({ is_read: true })
+        .eq('kos_id', currentChatKosId)
+        .eq('receiver_id', currentUser.id)
+        .eq('is_read', false);
+      if (currentChatPartnerId) q = q.eq('sender_id', currentChatPartnerId);
+      await q;
+    } catch (err) { /* silent */ }
+    updateChatNavDots();
+  }
+
+  // Perbarui titik notifikasi oranye di nav "Pesan" berdasarkan jumlah pesan belum dibaca sesungguhnya
+  async function updateChatNavDots() {
+    if (!currentUser) return;
+    try {
+      const { data } = await sbClient
+        .from('chat_messages')
+        .select('id', { count: 'exact' })
+        .eq('receiver_id', currentUser.id)
+        .eq('is_read', false);
+      const hasUnread = !!(data && data.length > 0);
+      document.querySelectorAll('[data-chat-dot]').forEach(el => {
+        el.classList.toggle('has-unread', hasUnread);
+      });
+    } catch (err) { /* silent */ }
+  }
+
   async function loadChatMessages() {
     if (!currentChatKosId || !currentUser) return;
     const container = document.getElementById('chatMessages');
@@ -5576,6 +5608,9 @@ function installPWA() {
       messages.forEach(msg => appendMessageBubble(msg));
       lastMessageTimestamp = messages[messages.length - 1].created_at;
       container.scrollTop = container.scrollHeight;
+
+      // Tandai pesan yang masuk ke user ini sebagai sudah dibaca
+      await markConversationRead();
     } catch (err) {
       console.error('Gagal load chat:', err);
       container.innerHTML = `
@@ -5912,6 +5947,7 @@ function installPWA() {
   function showChatList() {
     show('chat-list');
     loadChatList();
+    updateChatNavDots();
     const nav = document.getElementById('chatListBottomNav');
     if (!nav) return;
     const isPemilik = currentUserProfile && currentUserProfile.role === 'pemilik';
