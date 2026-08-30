@@ -1078,7 +1078,7 @@ function installPWA() {
         <div class="nav-label">Favorit</div>
       </div>
       <div class="nav-item" onclick="showChatList()">
-        <div class="nav-icon nav-dot">📋</div>
+        <div class="nav-icon nav-dot">💬</div>
         <div class="nav-label">Pesan</div>
       </div>
       <div class="nav-item" onclick="showProfil()">
@@ -1214,7 +1214,7 @@ function installPWA() {
         <div class="nav-icon">❤️</div><div class="nav-label">Favorit</div>
       </div>
       <div class="nav-item" onclick="showChatList()">
-        <div class="nav-icon nav-dot">📋</div><div class="nav-label">Pesan</div>
+        <div class="nav-icon nav-dot">💬</div><div class="nav-label">Pesan</div>
       </div>
       <div class="nav-item" onclick="showProfil()">
         <div class="nav-icon">👤</div><div class="nav-label">Akun</div>
@@ -1408,7 +1408,7 @@ function installPWA() {
       <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
       <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
       <div class="nav-item active"><div class="nav-icon">❤️</div><div class="nav-label" style="color:var(--orange)">Favorit</div></div>
-      <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot">📋</div><div class="nav-label">Pesan</div></div>
+      <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot">💬</div><div class="nav-label">Pesan</div></div>
       <div class="nav-item" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label">Akun</div></div>
     </div>
   </div>
@@ -1575,7 +1575,7 @@ function installPWA() {
       <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
       <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
       <div class="nav-item" onclick="showFavorit()"><div class="nav-icon">❤️</div><div class="nav-label">Favorit</div></div>
-      <div class="nav-item" onclick="showChatList()"><div class="nav-icon">📋</div><div class="nav-label">Pesan</div></div>
+      <div class="nav-item" onclick="showChatList()"><div class="nav-icon">💬</div><div class="nav-label">Pesan</div></div>
       <div class="nav-item active" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label" style="color:var(--orange)">Akun</div></div>
     </div>
   </div>
@@ -3753,13 +3753,24 @@ function installPWA() {
       riwayatBookingData = data;
 
       container.innerHTML = data.map(b => `
-        <div style="background:linear-gradient(135deg,#22c55e,#16a34a);border-radius:16px;padding:16px;margin-bottom:14px;color:white">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <span style="font-size:20px">✅</span>
-            <div style="font-weight:800;font-size:14px">Booking Diterima!</div>
+        <div style="background:linear-gradient(135deg,#22c55e,#16a34a);border-radius:16px;padding:16px;margin-bottom:14px;color:white;position:relative;overflow:hidden">
+          <div style="position:relative;z-index:1;padding-right:70px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <span style="font-size:20px">✅</span>
+              <div style="font-weight:800;font-size:14px">Booking Diterima!</div>
+            </div>
+            <div style="font-size:12px;opacity:0.9;margin-bottom:12px">${(b.kos && b.kos.nama_kos) || 'Kos'} — segera konfirmasi dalam 1x24 jam</div>
           </div>
-          <div style="font-size:12px;opacity:0.9;margin-bottom:12px">${(b.kos && b.kos.nama_kos) || 'Kos'} — segera konfirmasi dalam 1x24 jam</div>
-          <button onclick="showKonfirmasiPembayaran('${b.id}')" style="width:100%;padding:12px;background:white;border:none;border-radius:10px;color:#16a34a;font-weight:700;font-size:13px;cursor:pointer">Konfirmasi & Lanjutkan →</button>
+          <button onclick="showKonfirmasiPembayaran('${b.id}')" style="width:100%;padding:12px;background:white;border:none;border-radius:10px;color:#16a34a;font-weight:700;font-size:13px;cursor:pointer;position:relative;z-index:1">Konfirmasi & Lanjutkan →</button>
+          <svg viewBox="0 0 100 100" style="position:absolute;top:6px;right:8px;width:76px;height:76px;opacity:0.95">
+            <rect x="18" y="46" width="64" height="42" rx="4" fill="#ffffff"/>
+            <polygon points="10,50 50,16 90,50" fill="#15803d"/>
+            <rect x="42" y="60" width="16" height="28" fill="#22c55e"/>
+            <rect x="26" y="56" width="12" height="12" rx="2" fill="#bbf7d0"/>
+            <rect x="62" y="56" width="12" height="12" rx="2" fill="#bbf7d0"/>
+            <circle cx="86" cy="70" r="8" fill="#4ade80" opacity="0.7"/>
+            <rect x="83" y="70" width="6" height="18" fill="#166534" opacity="0.7"/>
+          </svg>
         </div>
       `).join('');
     } catch (err) {
@@ -4116,7 +4127,7 @@ function installPWA() {
         <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
         <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
         <div class="nav-item" onclick="showFavorit()"><div class="nav-icon">❤️</div><div class="nav-label">Favorit</div></div>
-        <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot">📋</div><div class="nav-label">Pesan</div></div>
+        <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot">💬</div><div class="nav-label">Pesan</div></div>
         <div class="nav-item active"><div class="nav-icon">👤</div><div class="nav-label" style="color:var(--orange)">Akun</div></div>`;
     }
   }
