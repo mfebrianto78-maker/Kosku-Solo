@@ -592,7 +592,7 @@
     margin:0 auto 14px; box-shadow:0 4px 20px rgba(0,0,0,0.15);
   }
   .profil-name { font-size:19px; font-weight:800; color:white; margin-bottom:4px; }
-  .profil-email { font-size:12.5px; color:rgba(255,255,255,0.9); display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+  .profil-email { font-size:12.5px; color:rgba(255,255,255,0.9); margin-bottom:3px; }
   .profil-edit-btn {
     margin-top:10px; display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700;
     color:white; background:rgba(255,255,255,0.18); border:1.5px solid rgba(255,255,255,0.7);
@@ -3997,8 +3997,8 @@ function installPWA() {
       const contact = currentUser ? currentUser.email : '';
       const hp = currentUserProfile.no_hp || '';
       emailEl.innerHTML = `
-        ${contact ? `<div style="display:flex;align-items:center;gap:6px">✉️ <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${contact}</span></div>` : ''}
-        ${hp ? `<div style="display:flex;align-items:center;gap:6px;margin-top:2px">📞 ${hp}</div>` : ''}`;
+        ${contact ? `<div style="display:flex;align-items:center;gap:6px;min-width:0">✉️ <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${contact}</span></div>` : ''}
+        ${hp ? `<div style="display:flex;align-items:center;gap:6px;margin-top:2px;min-width:0">📞 <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${hp}</span></div>` : ''}`;
     }
     if (avatarEl) {
       if (currentUserProfile.foto_url) {
