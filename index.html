@@ -583,25 +583,37 @@
   #screen-profil { background: var(--bg); }
   .profil-header {
     background: linear-gradient(135deg, #FF7A00, #FF9A3C);
-    padding: 60px 24px 28px; text-align:center;
+    padding: 56px 20px 24px;
   }
+  .profil-header-row { display:flex; align-items:center; gap:16px; }
   .profil-avatar {
     width:80px; height:80px; background:white; border-radius:24px;
     display:flex; align-items:center; justify-content:center; font-size:36px;
     margin:0 auto 14px; box-shadow:0 4px 20px rgba(0,0,0,0.15);
   }
-  .profil-name { font-size:20px; font-weight:800; color:white; margin-bottom:4px; }
-  .profil-email { font-size:13px; color:rgba(255,255,255,0.8); }
+  .profil-name { font-size:19px; font-weight:800; color:white; margin-bottom:4px; }
+  .profil-email { font-size:12.5px; color:rgba(255,255,255,0.9); display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+  .profil-edit-btn {
+    margin-top:10px; display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700;
+    color:white; background:rgba(255,255,255,0.18); border:1.5px solid rgba(255,255,255,0.7);
+    padding:7px 16px; border-radius:50px; cursor:pointer;
+  }
   .profil-body { padding:20px; }
   .profil-menu { background:white; border-radius:18px; overflow:hidden; box-shadow:var(--shadow); }
+  .menu-section-title { font-size:12px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:0.5px; margin:22px 4px 8px; }
+  .menu-section-title:first-child { margin-top:0; }
   .menu-item {
-    display:flex; align-items:center; gap:14px; padding:17px 18px;
+    display:flex; align-items:center; gap:14px; padding:15px 18px;
     border-bottom:1px solid var(--border); cursor:pointer; transition: background 0.15s;
   }
   .menu-item:last-child { border-bottom:none; }
   .menu-item:active { background:var(--bg); }
   .menu-item-icon { font-size:22px; width:36px; text-align:center; }
-  .menu-item-label { font-size:15px; font-weight:600; color:var(--text); flex:1; }
+  .menu-item-icon-badge {
+    width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    font-size:17px; flex-shrink:0;
+  }
+  .menu-item-label { font-size:14.5px; font-weight:600; color:var(--text); flex:1; }
   .menu-arrow { color:var(--text-3); font-size:16px; }
   .menu-item.danger .menu-item-label { color:var(--red); }
 
@@ -1611,17 +1623,21 @@ function installPWA() {
   <!-- ===== PROFIL ===== -->
   <div id="screen-profil" class="screen">
     <div class="profil-header">
-      <div style="position:relative;width:80px;height:80px;margin:0 auto 14px">
-        <div id="profilAvatar" style="width:80px;height:80px;border-radius:24px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:36px;color:white;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.15)">👤</div>
-        <div onclick="document.getElementById('avatarInput').click()" style="position:absolute;bottom:-4px;right:-4px;width:28px;height:28px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2);font-size:13px;border:2px solid white">✏️</div>
-        <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="handleAvatarChange(this)">
+      <div class="profil-header-row">
+        <div style="position:relative;width:80px;height:80px;flex-shrink:0">
+          <div id="profilAvatar" style="width:80px;height:80px;border-radius:24px;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:36px;color:white;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.15)">👤</div>
+          <div onclick="document.getElementById('avatarInput').click()" style="position:absolute;bottom:-4px;right:-4px;width:26px;height:26px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2);font-size:12px;border:2px solid white">📷</div>
+          <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="handleAvatarChange(this)">
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="profil-name" id="profilName">-</div>
+          <div class="profil-email" id="profilEmail">-</div>
+          <div class="profil-edit-btn" onclick="showPengaturan()">✏️ Edit Profil</div>
+        </div>
       </div>
-      <div class="profil-name" id="profilName">-</div>
-      <div class="profil-email" id="profilEmail">-</div>
-      <div id="avatarUploadMsg" style="font-size:12px;margin-top:6px;display:none;color:white"></div>
+      <div id="avatarUploadMsg" style="font-size:12px;margin-top:8px;color:white"></div>
     </div>
     <div class="profil-body" style="flex:1;overflow-y:auto">
-      <div style="margin-bottom:16px"></div>
       <div class="profil-menu" id="profilMenu">
         <!-- Diisi dinamis oleh renderProfilMenu() -->
       </div>
@@ -3969,7 +3985,9 @@ function installPWA() {
     if (emailEl) {
       const contact = currentUser ? currentUser.email : '';
       const hp = currentUserProfile.no_hp || '';
-      emailEl.textContent = hp ? `${contact} • ${hp}` : contact;
+      emailEl.innerHTML = `
+        ${contact ? `<div style="display:flex;align-items:center;gap:6px">✉️ <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${contact}</span></div>` : ''}
+        ${hp ? `<div style="display:flex;align-items:center;gap:6px;margin-top:2px">📞 ${hp}</div>` : ''}`;
     }
     if (avatarEl) {
       if (currentUserProfile.foto_url) {
@@ -3989,85 +4007,91 @@ function installPWA() {
 
     if (isPemilik) {
       menu.innerHTML = `
+        <div class="menu-section-title">Akun</div>
         <div class="menu-item" onclick="showPengaturan()">
-          <div class="menu-item-icon">👤</div>
+          <div class="menu-item-icon-badge" style="background:#DBEAFE;color:#2563EB">👤</div>
           <div class="menu-item-label">Profil Saya</div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="showKelolaKos()">
-          <div class="menu-item-icon">🏠</div>
+          <div class="menu-item-icon-badge" style="background:#FFE4D6;color:#EA580C">🏠</div>
           <div class="menu-item-label">Kelola Kos</div>
           <div class="menu-arrow">›</div>
         </div>
+        <div class="menu-section-title">Transaksi</div>
         <div class="menu-item" onclick="showBookingMasuk()">
-          <div class="menu-item-icon">📋</div>
+          <div class="menu-item-icon-badge" style="background:#FFF7CD;color:#CA8A04">📋</div>
           <div class="menu-item-label">Booking Masuk</div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="showKeuangan()">
-          <div class="menu-item-icon">💰</div>
+          <div class="menu-item-icon-badge" style="background:#DCFCE7;color:#16A34A">💰</div>
           <div class="menu-item-label">Laporan Keuangan</div>
           <div class="menu-arrow">›</div>
         </div>
+        <div class="menu-section-title">Lainnya</div>
         <div class="menu-item" onclick="showPengaturan()">
-          <div class="menu-item-icon">⚙️</div>
+          <div class="menu-item-icon-badge" style="background:#E0F2FE;color:#0284C7">⚙️</div>
           <div class="menu-item-label">Pengaturan</div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="showNotif()">
-          <div class="menu-item-icon">🔔</div>
+          <div class="menu-item-icon-badge" style="background:#FEF9C3;color:#CA8A04">🔔</div>
           <div class="menu-item-label">Notifikasi</div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="show('bantuan')">
-          <div class="menu-item-icon">❓</div>
+          <div class="menu-item-icon-badge" style="background:#F1F5F9;color:#475569">❓</div>
           <div class="menu-item-label">Bantuan & FAQ</div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item danger" onclick="handleLogout()">
-          <div class="menu-item-icon">🚪</div>
+          <div class="menu-item-icon-badge" style="background:#FEE2E2;color:#DC2626">🚪</div>
           <div class="menu-item-label">Keluar</div>
           <div class="menu-arrow">›</div>
         </div>`;
     } else {
       menu.innerHTML = `
+        <div class="menu-section-title">Akun</div>
         <div class="menu-item" onclick="showPengaturan()">
-          <div class="menu-item-icon">👤</div>
+          <div class="menu-item-icon-badge" style="background:#DBEAFE;color:#2563EB">👤</div>
           <div class="menu-item-label">Profil Saya</div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="showFavorit()">
-          <div class="menu-item-icon">❤️</div>
+          <div class="menu-item-icon-badge" style="background:#FCE7F3;color:#DB2777">❤️</div>
           <div class="menu-item-label">Favorit Saya</div>
           <div class="menu-arrow">›</div>
         </div>
+        <div class="menu-section-title">Transaksi</div>
         <div class="menu-item" onclick="showRiwayat()">
-          <div class="menu-item-icon">📋</div>
+          <div class="menu-item-icon-badge" style="background:#FFE4D6;color:#EA580C">📋</div>
           <div class="menu-item-label">Riwayat Sewa</div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="show('pembayaran-akun')">
-          <div class="menu-item-icon">💳</div>
+          <div class="menu-item-icon-badge" style="background:#FFF7CD;color:#CA8A04">💳</div>
           <div class="menu-item-label">Pembayaran</div>
           <div class="menu-arrow">›</div>
         </div>
+        <div class="menu-section-title">Lainnya</div>
         <div class="menu-item" onclick="showPengaturan()">
-          <div class="menu-item-icon">⚙️</div>
+          <div class="menu-item-icon-badge" style="background:#E0F2FE;color:#0284C7">⚙️</div>
           <div class="menu-item-label">Pengaturan</div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="showNotif()">
-          <div class="menu-item-icon">🔔</div>
+          <div class="menu-item-icon-badge" style="background:#FEF9C3;color:#CA8A04">🔔</div>
           <div class="menu-item-label">Notifikasi</div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="show('bantuan')">
-          <div class="menu-item-icon">❓</div>
+          <div class="menu-item-icon-badge" style="background:#F1F5F9;color:#475569">❓</div>
           <div class="menu-item-label">Bantuan & FAQ</div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item danger" onclick="handleLogout()">
-          <div class="menu-item-icon">🚪</div>
+          <div class="menu-item-icon-badge" style="background:#FEE2E2;color:#DC2626">🚪</div>
           <div class="menu-item-label">Keluar</div>
           <div class="menu-arrow">›</div>
         </div>`;
