@@ -2070,39 +2070,101 @@ function installPWA() {
       <h2 style="font-size:18px;font-weight:800">❓ Bantuan & FAQ</h2>
     </div>
     <div style="flex:1;overflow-y:auto;padding:16px">
+      <div class="menu-section-title">Umum</div>
       <div class="profil-menu">
         <div class="menu-item" onclick="toggleFaq(this)">
           <div style="flex:1">
+            <div class="menu-item-label">Apa itu KosKu Solo?</div>
+            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">KosKu Solo adalah platform pencarian dan pengelolaan kos di wilayah Solo Raya (Kota Solo, Sukoharjo, Karanganyar, Boyolali, Klaten, Sragen, Wonogiri). KosKu Solo mempertemukan pencari kos dengan pemilik kos secara langsung, mulai dari pencarian, chat, hingga booking.</div>
+          </div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="toggleFaq(this)">
+          <div style="flex:1">
             <div class="menu-item-label">Bagaimana cara booking kos?</div>
-            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Pilih kos yang diinginkan → klik Booking Sekarang → isi data → pilih kamar & durasi → lanjut pembayaran.</div>
+            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Pilih kos yang diinginkan → buka Detail Kos → klik "Booking Sekarang" → isi data penyewa, pilih kamar & durasi sewa → kirim permintaan booking. Pemilik kos akan mengonfirmasi dalam waktu 1×24 jam.</div>
           </div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="toggleFaq(this)">
           <div style="flex:1">
             <div class="menu-item-label">Bagaimana cara menghubungi pemilik kos?</div>
-            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Buka halaman Detail Kos → klik tombol Chat untuk memulai percakapan langsung dengan pemilik.</div>
+            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Buka halaman Detail Kos, lalu ketuk tombol "Chat". Anda bisa bertanya langsung ke pemilik kos mengenai ketersediaan kamar, fasilitas, peraturan, atau hal lain sebelum memutuskan booking.</div>
           </div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="toggleFaq(this)">
           <div style="flex:1">
-            <div class="menu-item-label">Apakah data saya aman?</div>
-            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Ya, data Anda tersimpan dengan aman menggunakan enkripsi dan sistem keamanan Supabase.</div>
+            <div class="menu-item-label">Apa arti badge "Terverifikasi" pada kos?</div>
+            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Badge "✅ Terverifikasi" diberikan otomatis pada kos yang sudah melengkapi foto, titik lokasi di peta, dan memiliki minimal satu riwayat sewa yang berhasil diselesaikan. Ini membantu Anda mengenali kos dengan rekam jejak yang jelas.</div>
           </div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="toggleFaq(this)">
           <div style="flex:1">
-            <div class="menu-item-label">Bagaimana cara mendaftarkan kos saya?</div>
-            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Daftar sebagai Pemilik Kos → masuk ke Dashboard → Kelola Kos → Tambah Kos Baru → isi data lengkap → Simpan.</div>
+            <div class="menu-item-label">Bagaimana cara membatalkan booking?</div>
+            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Buka menu Akun → Riwayat Sewa → pilih booking berstatus "Menunggu" atau "Aktif" → ketuk "Batalkan". Sebaiknya beri tahu pemilik kos juga melalui Chat agar tidak terjadi kesalahpahaman.</div>
+          </div>
+          <div class="menu-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="menu-section-title">Pembayaran & Transaksi</div>
+      <div class="profil-menu">
+        <div class="menu-item" onclick="toggleFaq(this)">
+          <div style="flex:1">
+            <div class="menu-item-label">Bagaimana cara pembayaran sewa kos?</div>
+            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Saat ini pembayaran sewa dilakukan secara langsung antara penyewa dan pemilik kos (transfer bank, tunai/COD, atau metode lain yang disepakati bersama), di luar sistem aplikasi. Setelah pembayaran diterima, pemilik kos dapat menerbitkan kwitansi digital melalui aplikasi sebagai bukti sah.</div>
           </div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="toggleFaq(this)">
           <div style="flex:1">
             <div class="menu-item-label">Bagaimana jika ada masalah pembayaran?</div>
-            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Hubungi kami melalui email support atau WhatsApp yang tersedia di bagian Hubungi Kami di bawah.</div>
+            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Segera hubungi pemilik kos melalui fitur Chat untuk klarifikasi. Jika tidak menemukan solusi, Anda dapat menghubungi tim KosKu Solo melalui WhatsApp di bagian "Hubungi Kami" untuk mendapatkan pendampingan.</div>
+          </div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="toggleFaq(this)">
+          <div style="flex:1">
+            <div class="menu-item-label">Apakah KosKu Solo bertanggung jawab atas transaksi pembayaran?</div>
+            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6"><b>Tidak.</b> KosKu Solo adalah platform yang mempertemukan pencari kos dan pemilik kos, dan tidak bertindak sebagai perantara pembayaran (payment gateway). Seluruh transaksi pembayaran sewa dilakukan secara langsung dan menjadi tanggung jawab pribadi antara penyewa dan pemilik kos. Kami menyarankan Anda selalu melakukan verifikasi langsung (bertemu/cek lokasi) sebelum melakukan pembayaran apa pun.</div>
+          </div>
+          <div class="menu-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="menu-section-title">Keamanan & Privasi</div>
+      <div class="profil-menu">
+        <div class="menu-item" onclick="toggleFaq(this)">
+          <div style="flex:1">
+            <div class="menu-item-label">Apakah data saya aman?</div>
+            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Ya. Data Anda tersimpan dengan sistem keamanan dan enkripsi standar industri melalui Supabase. Kami tidak membagikan data pribadi Anda kepada pihak ketiga tanpa izin, kecuali diwajibkan oleh hukum.</div>
+          </div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="toggleFaq(this)">
+          <div style="flex:1">
+            <div class="menu-item-label">Bagaimana cara menjaga keamanan saat bertransaksi?</div>
+            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Selalu komunikasikan detail penting melalui fitur Chat di aplikasi (bukan di luar aplikasi), cek langsung kondisi kos sebelum membayar, dan hindari mentransfer uang kepada pihak yang belum jelas identitasnya. Utamakan kos dengan badge "Terverifikasi" dan rating yang baik.</div>
+          </div>
+          <div class="menu-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="menu-section-title">Untuk Pemilik Kos</div>
+      <div class="profil-menu">
+        <div class="menu-item" onclick="toggleFaq(this)">
+          <div style="flex:1">
+            <div class="menu-item-label">Bagaimana cara mendaftarkan kos saya?</div>
+            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Daftar akun dengan memilih peran "Pemilik Kos" → masuk ke Dashboard → menu "Kelola Kos" → "Tambah Kos Baru" → lengkapi data, foto, fasilitas, dan titik lokasi di peta → Simpan.</div>
+          </div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="toggleFaq(this)">
+          <div style="flex:1">
+            <div class="menu-item-label">Apakah ada biaya untuk mendaftarkan kos?</div>
+            <div class="faq-answer" style="display:none;font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.6">Saat ini pendaftaran dan pengelolaan kos di KosKu Solo tidak dipungut biaya (gratis). Beberapa fitur promosi tambahan (seperti banner promosi) mungkin akan tersedia secara berbayar di kemudian hari.</div>
           </div>
           <div class="menu-arrow">›</div>
         </div>
