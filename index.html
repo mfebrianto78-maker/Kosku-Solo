@@ -1044,6 +1044,9 @@ function installPWA() {
         <div class="cat-chip" onclick="gotoAreaSearch('Kartosuro')">Kartosuro</div>
         <div class="cat-chip" onclick="gotoAreaSearch('Jebres')">Jebres</div>
         <div class="cat-chip" onclick="gotoAreaSearch('Banjarsari')">Banjarsari</div>
+        <div class="cat-chip" onclick="gotoAreaSearch('UNS')">🎓 UNS</div>
+        <div class="cat-chip" onclick="gotoAreaSearch('UMS')">🎓 UMS</div>
+        <div class="cat-chip" onclick="gotoAreaSearch('UIN Surakarta')">🎓 UIN</div>
       </div>
 
       <div class="banner-carousel" id="dashBannerCarousel">
@@ -1120,47 +1123,16 @@ function installPWA() {
 
       <!-- Panel Area -->
       <div id="panelArea" style="display:none;padding-top:12px">
-        <!-- Tab area kategori -->
-        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px" class="filter-bar">
-          <div class="filter-chip active" id="areaCatAll" onclick="switchAreaCat('semua')">Semua</div>
-          <div class="filter-chip" id="areaCatKampus" onclick="switchAreaCat('kampus')">🎓 Kampus</div>
-          <div class="filter-chip" id="areaCatKec" onclick="switchAreaCat('kecamatan')">🏘️ Kecamatan</div>
-          <div class="filter-chip" id="areaCatSoloraya" onclick="switchAreaCat('soloraya')">🌏 Soloraya</div>
-        </div>
-
-        <!-- Kampus -->
-        <div id="areaKampus" style="margin-top:10px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">🎓 Dekat Kampus</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px">
-            <div class="area-chip" onclick="filterByArea(this,'UIN Surakarta')">UIN</div>
-            <div class="area-chip" onclick="filterByArea(this,'UMS')">UMS</div>
-            <div class="area-chip" onclick="filterByArea(this,'UNS')">UNS</div>
-            <div class="area-chip" onclick="filterByArea(this,'UTP')">UTP</div>
-            <div class="area-chip" onclick="filterByArea(this,'UNIBA')">UNIBA</div>
-            <div class="area-chip" onclick="filterByArea(this,'UNISRI')">UNISRI</div>
+        <div style="display:flex;gap:12px">
+          <div onclick="openAreaPicker('kampus')" style="flex:1;background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border-radius:16px;padding:22px 14px;text-align:center;cursor:pointer;border:1.5px solid #BFDBFE">
+            <div style="font-size:34px;margin-bottom:8px">🎓</div>
+            <div style="font-weight:800;font-size:15px;color:var(--text)">Kampus</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:3px">6 pilihan kampus</div>
           </div>
-        </div>
-
-        <!-- Kecamatan -->
-        <div id="areaKecamatan" style="margin-top:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">🏘️ Kecamatan Solo</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px">
-            <div class="area-chip" onclick="filterByArea(this,'Pasar Kliwon')">Pasar Kliwon</div>
-            <div class="area-chip" onclick="filterByArea(this,'Jebres')">Jebres</div>
-            <div class="area-chip" onclick="filterByArea(this,'Serengan')">Serengan</div>
-            <div class="area-chip" onclick="filterByArea(this,'Laweyan')">Laweyan</div>
-            <div class="area-chip" onclick="filterByArea(this,'Banjarsari')">Banjarsari</div>
-          </div>
-        </div>
-
-        <!-- Soloraya -->
-        <div id="areaSoloraya" style="margin-top:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">🌏 Soloraya</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px">
-            <div class="area-chip" onclick="filterByArea(this,'Kartosuro')">Kartosuro</div>
-            <div class="area-chip" onclick="filterByArea(this,'Palur')">Palur</div>
-            <div class="area-chip" onclick="filterByArea(this,'Colomadu')">Colomadu</div>
-            <div class="area-chip" onclick="filterByArea(this,'Solobaru')">Solobaru</div>
+          <div onclick="openAreaPicker('soloraya')" style="flex:1;background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border-radius:16px;padding:22px 14px;text-align:center;cursor:pointer;border:1.5px solid #FED7AA">
+            <div style="font-size:34px;margin-bottom:8px">🌏</div>
+            <div style="font-weight:800;font-size:15px;color:var(--text)">Soloraya</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:3px">9 pilihan wilayah</div>
           </div>
         </div>
       </div>
@@ -1554,6 +1526,19 @@ function installPWA() {
     </div>
     <div style="padding:0 16px 30px">
       <button class="btn-primary" id="payBtn" onclick="handleConfirmPayment()">Bayar Sekarang</button>
+    </div>
+  </div>
+
+  <!-- ===== PILIH AREA (Kampus / Soloraya) ===== -->
+  <div id="screen-pilih-area" class="screen">
+    <div class="top-bar" style="padding:52px 20px 16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="back-btn" onclick="showSearch()">←</div>
+        <h2 id="pilihAreaTitle" style="font-size:18px;font-weight:800;margin:0">Pilih Kampus</h2>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:4px 20px 20px">
+      <div id="pilihAreaGrid" style="display:flex;flex-wrap:wrap;gap:10px"></div>
     </div>
   </div>
 
@@ -4941,6 +4926,44 @@ function installPWA() {
   }
 
   // Langsung ke halaman search dengan filter area tertentu
+  // Data area: Kampus & Soloraya (dipakai halaman Pilih Area)
+  const AREA_KAMPUS = [
+    { label: 'UIN Surakarta', value: 'UIN Surakarta' },
+    { label: 'UMS', value: 'UMS' },
+    { label: 'UNS', value: 'UNS' },
+    { label: 'UTP', value: 'UTP' },
+    { label: 'UNIBA', value: 'UNIBA' },
+    { label: 'UNISRI', value: 'UNISRI' },
+  ];
+  const AREA_SOLORAYA = [
+    { label: 'Pasar Kliwon', value: 'Pasar Kliwon' },
+    { label: 'Jebres', value: 'Jebres' },
+    { label: 'Serengan', value: 'Serengan' },
+    { label: 'Laweyan', value: 'Laweyan' },
+    { label: 'Banjarsari', value: 'Banjarsari' },
+    { label: 'Kartosuro', value: 'Kartosuro' },
+    { label: 'Palur', value: 'Palur' },
+    { label: 'Colomadu', value: 'Colomadu' },
+    { label: 'Solobaru', value: 'Solobaru' },
+  ];
+
+  // Buka halaman Pilih Kampus / Pilih Wilayah Soloraya
+  function openAreaPicker(type) {
+    const titleEl = document.getElementById('pilihAreaTitle');
+    const gridEl = document.getElementById('pilihAreaGrid');
+    const items = type === 'kampus' ? AREA_KAMPUS : AREA_SOLORAYA;
+    const colors = type === 'kampus'
+      ? { bg: '#EFF6FF', border: '#BFDBFE', text: '#2563EB' }
+      : { bg: '#FFF7ED', border: '#FED7AA', text: '#EA580C' };
+    if (titleEl) titleEl.textContent = type === 'kampus' ? '🎓 Pilih Kampus' : '🌏 Pilih Wilayah Soloraya';
+    if (gridEl) {
+      gridEl.innerHTML = items.map(it => `
+        <div onclick="gotoAreaSearch('${it.value}')" style="padding:14px 20px;border-radius:14px;background:${colors.bg};border:1.5px solid ${colors.border};color:${colors.text};font-weight:700;font-size:14px;cursor:pointer">${it.label}</div>
+      `).join('');
+    }
+    show('pilih-area', 'search');
+  }
+
   function gotoAreaSearch(area) {
     activeArea = area;
     activeJenis = '';
@@ -4982,25 +5005,6 @@ function installPWA() {
       panelArea.style.display = 'block';
       panelJenis.style.display = 'none';
     }
-  }
-
-  // Switch sub-kategori area (semua/kampus/kecamatan/soloraya)
-  function switchAreaCat(cat) {
-    ['areaCatAll','areaCatKampus','areaCatKec','areaCatSoloraya'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.classList.remove('active');
-    });
-    const catMap = { semua:'areaCatAll', kampus:'areaCatKampus', kecamatan:'areaCatKec', soloraya:'areaCatSoloraya' };
-    const active = document.getElementById(catMap[cat]);
-    if (active) active.classList.add('active');
-
-    // Tampilkan/sembunyikan grup area
-    const showKampus = cat === 'semua' || cat === 'kampus';
-    const showKec = cat === 'semua' || cat === 'kecamatan';
-    const showSoloraya = cat === 'semua' || cat === 'soloraya';
-    document.getElementById('areaKampus').style.display = showKampus ? 'block' : 'none';
-    document.getElementById('areaKecamatan').style.display = showKec ? 'block' : 'none';
-    document.getElementById('areaSoloraya').style.display = showSoloraya ? 'block' : 'none';
   }
 
   // Filter berdasarkan area yang dipilih
