@@ -201,10 +201,10 @@
   #screen-dashboard { background: var(--bg); }
   .dash-header {
     background: linear-gradient(135deg, #FF7A00, #FF9A3C);
-    padding: 52px 20px 80px;
+    padding: 52px 20px 20px;
     position: relative;
   }
-  .dash-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .dash-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
   .dash-greeting h2 { font-size:20px; font-weight:800; color:white; }
   .dash-greeting p { font-size:13px; color:rgba(255,255,255,0.8); margin-top:3px; display:flex; align-items:center; gap:4px; }
   .dash-actions { display:flex; gap:10px; }
@@ -218,6 +218,20 @@
     background:var(--red); border-radius:50%; font-size:10px; font-weight:700; color:white;
     display:flex; align-items:center; justify-content:center;
   }
+  .dash-shortcut-wrap { position:relative; height:66px; margin-bottom:8px; }
+  .dash-shortcut-page {
+    position:absolute; inset:0; display:flex; gap:10px; opacity:0; transition:opacity 0.6s ease; pointer-events:none;
+  }
+  .dash-shortcut-page.active { opacity:1; pointer-events:auto; }
+  .dash-shortcut-box {
+    flex:1; background:rgba(255,255,255,0.16); border:1px solid rgba(255,255,255,0.32); border-radius:14px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; color:white;
+  }
+  .dash-shortcut-box .sc-icon { font-size:19px; }
+  .dash-shortcut-box .sc-label { font-size:10.5px; font-weight:700; }
+  .dash-shortcut-dots { display:flex; justify-content:center; gap:5px; margin-bottom:28px; }
+  .dash-shortcut-dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.4); transition:all 0.3s; }
+  .dash-shortcut-dot.active { background:white; width:14px; border-radius:3px; }
   .search-overlay {
     margin: 0 20px; margin-top: -28px; position:relative; z-index:10;
   }
@@ -1025,6 +1039,8 @@ function installPWA() {
           <div class="dash-icon-btn" id="dashAccountBtn" onclick="showProfil()">👤</div>
         </div>
       </div>
+      <div class="dash-shortcut-wrap" id="dashShortcutWrap"></div>
+      <div class="dash-shortcut-dots" id="dashShortcutDots"></div>
     </div>
     <div class="search-overlay">
       <div class="search-box" onclick="showSearch()">
@@ -3750,7 +3766,58 @@ function installPWA() {
   function showLogin() { show('login'); }
   function showRegister() { show('register'); }
   function showRole() { show('role'); }
-  function showDashboard() { show('dashboard'); prevScreen = 'dashboard'; loadBookingAlertBanner(); initDashBannerCarousel(); }
+  function showDashboard() { show('dashboard'); prevScreen = 'dashboard'; loadBookingAlertBanner(); initDashBannerCarousel(); initDashShortcuts(); }
+
+  // ===== SHORTCUT CEPAT KAMPUS/AREA DI BERANDA (mirip banner, auto-geser) =====
+  const DASH_SHORTCUTS = [
+    { icon: '🎓', label: 'UNS', value: 'UNS' },
+    { icon: '🎓', label: 'UMS', value: 'UMS' },
+    { icon: '🎓', label: 'UIN', value: 'UIN Surakarta' },
+    { icon: '🎓', label: 'UTP', value: 'UTP' },
+    { icon: '🏘️', label: 'Kartosuro', value: 'Kartosuro' },
+    { icon: '🏘️', label: 'Jebres', value: 'Jebres' },
+    { icon: '🏘️', label: 'Banjarsari', value: 'Banjarsari' },
+    { icon: '🏘️', label: 'Solobaru', value: 'Solobaru' },
+  ];
+  let dashShortcutTimer = null;
+
+  function initDashShortcuts() {
+    const wrap = document.getElementById('dashShortcutWrap');
+    const dotsWrap = document.getElementById('dashShortcutDots');
+    if (!wrap || wrap.dataset.ready) return;
+    wrap.dataset.ready = '1';
+
+    const pageSize = 4;
+    const pages = [];
+    for (let i = 0; i < DASH_SHORTCUTS.length; i += pageSize) {
+      pages.push(DASH_SHORTCUTS.slice(i, i + pageSize));
+    }
+
+    wrap.innerHTML = pages.map((page, i) => `
+      <div class="dash-shortcut-page${i === 0 ? ' active' : ''}">
+        ${page.map(it => `
+          <div class="dash-shortcut-box" onclick="gotoAreaSearch('${it.value}')">
+            <div class="sc-icon">${it.icon}</div>
+            <div class="sc-label">${it.label}</div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+
+    dotsWrap.innerHTML = pages.map((_, i) => `<div class="dash-shortcut-dot${i === 0 ? ' active' : ''}"></div>`).join('');
+
+    if (pages.length <= 1) return;
+    const pageEls = Array.from(wrap.querySelectorAll('.dash-shortcut-page'));
+    const dotEls = Array.from(dotsWrap.children);
+    let idx = 0;
+    dashShortcutTimer = setInterval(() => {
+      pageEls[idx].classList.remove('active');
+      dotEls[idx].classList.remove('active');
+      idx = (idx + 1) % pageEls.length;
+      pageEls[idx].classList.add('active');
+      dotEls[idx].classList.add('active');
+    }, 3500);
+  }
 
   let dashBannerTimer = null;
   let dashBannerIndex = 0;
