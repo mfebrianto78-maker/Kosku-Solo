@@ -185,10 +185,11 @@
     flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
     cursor:pointer; padding:6px 0;
   }
-  .nav-icon { font-size:22px; }
+  .nav-icon { font-size:22px; color:var(--text-3); display:flex; align-items:center; justify-content:center; }
+  .nav-icon svg { width:23px; height:23px; display:block; }
   .nav-label { font-size:10px; font-weight:600; color:var(--text-3); }
   .nav-item.active .nav-label { color:var(--orange); }
-  .nav-item.active .nav-icon { filter: none; }
+  .nav-item.active .nav-icon { color:var(--orange); }
   .nav-dot {
     position:relative;
   }
@@ -1086,23 +1087,23 @@ function installPWA() {
 
     <div class="bottom-nav">
       <div class="nav-item active" onclick="showDashboard()">
-        <div class="nav-icon">🏠</div>
+        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></div>
         <div class="nav-label" style="color:var(--orange)">Beranda</div>
       </div>
       <div class="nav-item" onclick="showSearch()">
-        <div class="nav-icon">🔍</div>
+        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
         <div class="nav-label">Cari</div>
       </div>
       <div class="nav-item" onclick="showFavorit()">
-        <div class="nav-icon">❤️</div>
+        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.7-4.35-9.3-8.55C.9 9.6 1.9 6 5 5c1.9-.6 3.9.2 5 1.8C11.1 5.2 13.1 4.4 15 5c3.1 1 4.1 4.6 2.3 7.45C18.7 16.65 12 21 12 21z"/></svg></div>
         <div class="nav-label">Favorit</div>
       </div>
       <div class="nav-item" onclick="showChatList()">
-        <div class="nav-icon nav-dot" data-chat-dot>💬</div>
+        <div class="nav-icon nav-dot" data-chat-dot><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20l1.2-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg></div>
         <div class="nav-label">Pesan</div>
       </div>
       <div class="nav-item" onclick="showProfil()">
-        <div class="nav-icon">👤</div>
+        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></div>
         <div class="nav-label">Akun</div>
       </div>
     </div>
@@ -1194,19 +1195,19 @@ function installPWA() {
 
     <div class="bottom-nav">
       <div class="nav-item" onclick="showDashboard()">
-        <div class="nav-icon">🏠</div><div class="nav-label">Beranda</div>
+        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></div><div class="nav-label">Beranda</div>
       </div>
       <div class="nav-item active" onclick="showSearch()">
-        <div class="nav-icon">🔍</div><div class="nav-label" style="color:var(--orange)">Cari</div>
+        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="nav-label" style="color:var(--orange)">Cari</div>
       </div>
       <div class="nav-item" onclick="showFavorit()">
-        <div class="nav-icon">❤️</div><div class="nav-label">Favorit</div>
+        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.7-4.35-9.3-8.55C.9 9.6 1.9 6 5 5c1.9-.6 3.9.2 5 1.8C11.1 5.2 13.1 4.4 15 5c3.1 1 4.1 4.6 2.3 7.45C18.7 16.65 12 21 12 21z"/></svg></div><div class="nav-label">Favorit</div>
       </div>
       <div class="nav-item" onclick="showChatList()">
-        <div class="nav-icon nav-dot" data-chat-dot>💬</div><div class="nav-label">Pesan</div>
+        <div class="nav-icon nav-dot" data-chat-dot><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20l1.2-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg></div><div class="nav-label">Pesan</div>
       </div>
       <div class="nav-item" onclick="showProfil()">
-        <div class="nav-icon">👤</div><div class="nav-label">Akun</div>
+        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></div><div class="nav-label">Akun</div>
       </div>
     </div>
   </div>
@@ -1394,11 +1395,11 @@ function installPWA() {
     </div>
     <div class="favorit-body" style="flex:1"></div>
     <div class="bottom-nav">
-      <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
-      <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
-      <div class="nav-item active"><div class="nav-icon">❤️</div><div class="nav-label" style="color:var(--orange)">Favorit</div></div>
-      <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot" data-chat-dot>💬</div><div class="nav-label">Pesan</div></div>
-      <div class="nav-item" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label">Akun</div></div>
+      <div class="nav-item" onclick="showDashboard()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></div><div class="nav-label">Beranda</div></div>
+      <div class="nav-item" onclick="showSearch()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="nav-label">Cari</div></div>
+      <div class="nav-item active"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.7-4.35-9.3-8.55C.9 9.6 1.9 6 5 5c1.9-.6 3.9.2 5 1.8C11.1 5.2 13.1 4.4 15 5c3.1 1 4.1 4.6 2.3 7.45C18.7 16.65 12 21 12 21z"/></svg></div><div class="nav-label" style="color:var(--orange)">Favorit</div></div>
+      <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot" data-chat-dot><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20l1.2-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg></div><div class="nav-label">Pesan</div></div>
+      <div class="nav-item" onclick="showProfil()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></div><div class="nav-label">Akun</div></div>
     </div>
   </div>
 
@@ -1574,11 +1575,11 @@ function installPWA() {
     </div>
     <div class="riwayat-list" style="flex:1;overflow-y:auto" id="riwayatList"></div>
     <div class="bottom-nav">
-      <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
-      <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
-      <div class="nav-item" onclick="showFavorit()"><div class="nav-icon">❤️</div><div class="nav-label">Favorit</div></div>
-      <div class="nav-item" onclick="showChatList()"><div class="nav-icon">💬</div><div class="nav-label">Pesan</div></div>
-      <div class="nav-item active" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label" style="color:var(--orange)">Akun</div></div>
+      <div class="nav-item" onclick="showDashboard()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></div><div class="nav-label">Beranda</div></div>
+      <div class="nav-item" onclick="showSearch()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="nav-label">Cari</div></div>
+      <div class="nav-item" onclick="showFavorit()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.7-4.35-9.3-8.55C.9 9.6 1.9 6 5 5c1.9-.6 3.9.2 5 1.8C11.1 5.2 13.1 4.4 15 5c3.1 1 4.1 4.6 2.3 7.45C18.7 16.65 12 21 12 21z"/></svg></div><div class="nav-label">Favorit</div></div>
+      <div class="nav-item" onclick="showChatList()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20l1.2-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg></div><div class="nav-label">Pesan</div></div>
+      <div class="nav-item active" onclick="showProfil()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></div><div class="nav-label" style="color:var(--orange)">Akun</div></div>
     </div>
   </div>
 
@@ -1737,11 +1738,11 @@ function installPWA() {
     </div>
 
     <div class="bottom-nav">
-      <div class="nav-item active"><div class="nav-icon">🏠</div><div class="nav-label" style="color:var(--orange)">Beranda</div></div>
-      <div class="nav-item" onclick="showBookingMasuk()"><div class="nav-icon nav-dot has-unread">📋</div><div class="nav-label">Booking</div></div>
-      <div class="nav-item" onclick="showKeuangan()"><div class="nav-icon">💰</div><div class="nav-label">Keuangan</div></div>
-      <div class="nav-item" onclick="showChatList()"><div class="nav-icon">💬</div><div class="nav-label">Chat</div></div>
-      <div class="nav-item" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label">Akun</div></div>
+      <div class="nav-item active"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></div><div class="nav-label" style="color:var(--orange)">Beranda</div></div>
+      <div class="nav-item" onclick="showBookingMasuk()"><div class="nav-icon nav-dot has-unread"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="15" y2="14"/></svg></div><div class="nav-label">Booking</div></div>
+      <div class="nav-item" onclick="showKeuangan()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.2" fill="currentColor" stroke="none"/></svg></div><div class="nav-label">Keuangan</div></div>
+      <div class="nav-item" onclick="showChatList()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20l1.2-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg></div><div class="nav-label">Chat</div></div>
+      <div class="nav-item" onclick="showProfil()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></div><div class="nav-label">Akun</div></div>
     </div>
   </div>
 
@@ -4233,18 +4234,18 @@ function installPWA() {
 
     if (isPemilik) {
       nav.innerHTML = `
-        <div class="nav-item" onclick="showOwner()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
-        <div class="nav-item" onclick="showBookingMasuk()"><div class="nav-icon">📋</div><div class="nav-label">Booking</div></div>
-        <div class="nav-item" onclick="showKeuangan()"><div class="nav-icon">💰</div><div class="nav-label">Keuangan</div></div>
-        <div class="nav-item" onclick="showChatList()"><div class="nav-icon">💬</div><div class="nav-label">Chat</div></div>
-        <div class="nav-item active"><div class="nav-icon">👤</div><div class="nav-label" style="color:var(--orange)">Akun</div></div>`;
+        <div class="nav-item" onclick="showOwner()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></div><div class="nav-label">Beranda</div></div>
+        <div class="nav-item" onclick="showBookingMasuk()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="15" y2="14"/></svg></div><div class="nav-label">Booking</div></div>
+        <div class="nav-item" onclick="showKeuangan()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.2" fill="currentColor" stroke="none"/></svg></div><div class="nav-label">Keuangan</div></div>
+        <div class="nav-item" onclick="showChatList()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20l1.2-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg></div><div class="nav-label">Chat</div></div>
+        <div class="nav-item active"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></div><div class="nav-label" style="color:var(--orange)">Akun</div></div>`;
     } else {
       nav.innerHTML = `
-        <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
-        <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
-        <div class="nav-item" onclick="showFavorit()"><div class="nav-icon">❤️</div><div class="nav-label">Favorit</div></div>
-        <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot" data-chat-dot>💬</div><div class="nav-label">Pesan</div></div>
-        <div class="nav-item active"><div class="nav-icon">👤</div><div class="nav-label" style="color:var(--orange)">Akun</div></div>`;
+        <div class="nav-item" onclick="showDashboard()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></div><div class="nav-label">Beranda</div></div>
+        <div class="nav-item" onclick="showSearch()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="nav-label">Cari</div></div>
+        <div class="nav-item" onclick="showFavorit()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.7-4.35-9.3-8.55C.9 9.6 1.9 6 5 5c1.9-.6 3.9.2 5 1.8C11.1 5.2 13.1 4.4 15 5c3.1 1 4.1 4.6 2.3 7.45C18.7 16.65 12 21 12 21z"/></svg></div><div class="nav-label">Favorit</div></div>
+        <div class="nav-item" onclick="showChatList()"><div class="nav-icon nav-dot" data-chat-dot><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20l1.2-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg></div><div class="nav-label">Pesan</div></div>
+        <div class="nav-item active"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></div><div class="nav-label" style="color:var(--orange)">Akun</div></div>`;
     }
   }
   function showOwner() { show('owner'); prevScreen = 'owner'; loadMyKos(); }
@@ -6087,18 +6088,18 @@ function installPWA() {
     const isPemilik = currentUserProfile && currentUserProfile.role === 'pemilik';
     if (isPemilik) {
       nav.innerHTML = `
-        <div class="nav-item" onclick="showOwner()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
-        <div class="nav-item" onclick="showBookingMasuk()"><div class="nav-icon">📋</div><div class="nav-label">Booking</div></div>
-        <div class="nav-item" onclick="showKeuangan()"><div class="nav-icon">💰</div><div class="nav-label">Keuangan</div></div>
-        <div class="nav-item active"><div class="nav-icon">💬</div><div class="nav-label" style="color:var(--orange)">Chat</div></div>
-        <div class="nav-item" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label">Akun</div></div>`;
+        <div class="nav-item" onclick="showOwner()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></div><div class="nav-label">Beranda</div></div>
+        <div class="nav-item" onclick="showBookingMasuk()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="15" y2="14"/></svg></div><div class="nav-label">Booking</div></div>
+        <div class="nav-item" onclick="showKeuangan()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.2" fill="currentColor" stroke="none"/></svg></div><div class="nav-label">Keuangan</div></div>
+        <div class="nav-item active"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20l1.2-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg></div><div class="nav-label" style="color:var(--orange)">Chat</div></div>
+        <div class="nav-item" onclick="showProfil()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></div><div class="nav-label">Akun</div></div>`;
     } else {
       nav.innerHTML = `
-        <div class="nav-item" onclick="showDashboard()"><div class="nav-icon">🏠</div><div class="nav-label">Beranda</div></div>
-        <div class="nav-item" onclick="showSearch()"><div class="nav-icon">🔍</div><div class="nav-label">Cari</div></div>
-        <div class="nav-item" onclick="showFavorit()"><div class="nav-icon">❤️</div><div class="nav-label">Favorit</div></div>
-        <div class="nav-item active"><div class="nav-icon">💬</div><div class="nav-label" style="color:var(--orange)">Pesan</div></div>
-        <div class="nav-item" onclick="showProfil()"><div class="nav-icon">👤</div><div class="nav-label">Akun</div></div>`;
+        <div class="nav-item" onclick="showDashboard()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></div><div class="nav-label">Beranda</div></div>
+        <div class="nav-item" onclick="showSearch()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="nav-label">Cari</div></div>
+        <div class="nav-item" onclick="showFavorit()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.7-4.35-9.3-8.55C.9 9.6 1.9 6 5 5c1.9-.6 3.9.2 5 1.8C11.1 5.2 13.1 4.4 15 5c3.1 1 4.1 4.6 2.3 7.45C18.7 16.65 12 21 12 21z"/></svg></div><div class="nav-label">Favorit</div></div>
+        <div class="nav-item active"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20l1.2-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg></div><div class="nav-label" style="color:var(--orange)">Pesan</div></div>
+        <div class="nav-item" onclick="showProfil()"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></div><div class="nav-label">Akun</div></div>`;
     }
   }
 
