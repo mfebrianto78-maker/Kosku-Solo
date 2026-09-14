@@ -201,23 +201,13 @@
   /* ===== DASHBOARD PENCARI ===== */
   #screen-dashboard { background: var(--bg); }
   .dash-header {
-    background: linear-gradient(135deg, #FF7A00, #FF9A3C);
+    background-image: linear-gradient(135deg, rgba(255,122,0,0.88), rgba(255,154,60,0.88)), url('images/header-pattern.png');
+    background-size: cover, cover;
+    background-position: center, center;
+    background-blend-mode: normal, overlay;
     padding: 52px 20px 20px;
     position: relative;
-    overflow: hidden;
   }
-  .dash-header::before {
-    content: '';
-    position: absolute; inset: 0;
-    background-image: url('images/header-pattern.png');
-    background-size: cover;
-    background-position: center;
-    opacity: 0.22;
-    mix-blend-mode: overlay;
-    pointer-events: none;
-    z-index: 0;
-  }
-  .dash-header > * { position: relative; z-index: 1; }
   .dash-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
   .dash-greeting h2 { font-size:20px; font-weight:800; color:white; }
   .dash-greeting p { font-size:13px; color:rgba(255,255,255,0.8); margin-top:3px; display:flex; align-items:center; gap:4px; }
