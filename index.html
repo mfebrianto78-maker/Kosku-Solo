@@ -3297,9 +3297,17 @@ function installPWA() {
       return `
         <div style="background:white;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-            <div style="font-weight:800;font-size:14px">🚪 Kamar ${c.nomor_kamar || '-'}</div>
+            <div>
+              <div style="font-weight:800;font-size:14px">🚪 Kamar ${c.nomor_kamar || '-'}</div>
+              ${c.nama_penghuni ? `<div style="font-size:12.5px;color:var(--text-2);margin-top:2px">👤 ${c.nama_penghuni}</div>` : ''}
+            </div>
             <div style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px;background:${st.bg};color:${st.color}">${st.label}</div>
           </div>
+          ${c.foto_identitas_url ? `
+          <div style="margin-bottom:10px">
+            <img src="${c.foto_identitas_url}" style="width:100%;max-height:140px;object-fit:cover;border-radius:10px;cursor:pointer" onclick="window.open('${c.foto_identitas_url}','_blank')">
+            <div style="font-size:11px;color:var(--text-3);margin-top:4px">📎 Tap foto untuk lihat penuh</div>
+          </div>` : ''}
           <div style="font-size:12.5px;color:var(--text-2);line-height:1.9">
             <div>📅 Masuk: <b>${tgl(c.tanggal_masuk)}</b> ${c.tanggal_keluar ? `— Keluar: <b>${tgl(c.tanggal_keluar)}</b>` : ''}</div>
             <div>💵 Tagihan: <b style="${isLewat ? 'color:var(--red)' : isDekat ? 'color:var(--orange)' : ''}">${tgl(c.tanggal_tagihan)}</b> ${isLewat ? ' ⚠️ Terlambat' : isDekat ? ' 🔔 Segera' : ''}</div>
@@ -3321,8 +3329,11 @@ function installPWA() {
     modal.id = 'catatanFormModal';
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:flex-end;justify-content:center';
     modal.innerHTML = `
-      <div style="background:white;border-radius:20px 20px 0 0;padding:22px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">
+      <div style="background:white;border-radius:20px 20px 0 0;padding:22px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">
         <div style="font-size:16px;font-weight:800;margin-bottom:16px">${existing ? '✏️ Edit Catatan Sewa' : '➕ Tambah Catatan Sewa'}</div>
+
+        <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Nama Penghuni</label>
+        <input type="text" id="cfNamaPenghuni" placeholder="Nama lengkap penghuni" value="${existing ? existing.nama_penghuni || '' : ''}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 14px;font-size:14px">
 
         <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Nomor Kamar</label>
         <input type="text" id="cfNomorKamar" placeholder="Contoh: 05" value="${existing ? existing.nomor_kamar || '' : ''}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 14px;font-size:14px">
@@ -3345,7 +3356,18 @@ function installPWA() {
         </select>
 
         <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Keterangan (opsional)</label>
-        <textarea id="cfKeterangan" rows="2" placeholder="Catatan tambahan..." style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 18px;font-size:14px;resize:vertical">${existing ? existing.keterangan || '' : ''}</textarea>
+        <textarea id="cfKeterangan" rows="2" placeholder="Catatan tambahan..." style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 14px;font-size:14px;resize:vertical">${existing ? existing.keterangan || '' : ''}</textarea>
+
+        <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Foto Identitas (KTP/SIM)</label>
+        <div id="cfFotoPreview" style="margin:6px 0 8px">
+          ${existing && existing.foto_identitas_url
+            ? `<img src="${existing.foto_identitas_url}" style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;margin-bottom:8px">`
+            : ''}
+        </div>
+        <div onclick="document.getElementById('cfFotoInput').click()" style="width:100%;padding:13px;border:1.5px dashed var(--orange);border-radius:10px;text-align:center;cursor:pointer;font-size:13px;color:var(--orange);font-weight:700;margin-bottom:18px">
+          📷 ${existing && existing.foto_identitas_url ? 'Ganti Foto Identitas' : 'Upload Foto Identitas'}
+        </div>
+        <input type="file" id="cfFotoInput" accept="image/*" style="display:none" onchange="previewFotoIdentitas(this)">
 
         <div style="display:flex;gap:10px">
           <button onclick="document.getElementById('catatanFormModal').remove()" style="flex:1;padding:13px;background:var(--bg-2);border:none;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer">Batal</button>
@@ -3355,30 +3377,63 @@ function installPWA() {
     document.body.appendChild(modal);
   }
 
+  function previewFotoIdentitas(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = document.getElementById('cfFotoPreview');
+      if (preview) preview.innerHTML = `<img src="${e.target.result}" style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;margin-bottom:8px">`;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+
   async function saveCatatanForm() {
+    const namaPenghuni = document.getElementById('cfNamaPenghuni').value.trim();
     const nomorKamar = document.getElementById('cfNomorKamar').value.trim();
     const tglMasuk = document.getElementById('cfTglMasuk').value || null;
     const tglKeluar = document.getElementById('cfTglKeluar').value || null;
     const tglTagihan = document.getElementById('cfTglTagihan').value || null;
     const status = document.getElementById('cfStatus').value;
     const keterangan = document.getElementById('cfKeterangan').value.trim() || null;
+    const fotoInput = document.getElementById('cfFotoInput');
 
     if (!nomorKamar) { alert('Nomor kamar wajib diisi.'); return; }
+
+    // Upload foto identitas kalau ada file baru dipilih
+    let fotoUrl = editingCatatanId ? (catatanSewaData.find(c => c.id === editingCatatanId)?.foto_identitas_url || null) : null;
+    if (fotoInput && fotoInput.files && fotoInput.files[0]) {
+      try {
+        const file = fotoInput.files[0];
+        const ext = file.name.split('.').pop();
+        const fileName = `identitas/${currentUser.id}/${Date.now()}.${ext}`;
+        const { data: upData, error: upErr } = await sbClient.storage
+          .from('kos-photos')
+          .upload(fileName, file, { upsert: true });
+        if (upErr) throw upErr;
+        const { data: urlData } = sbClient.storage.from('kos-photos').getPublicUrl(fileName);
+        fotoUrl = urlData.publicUrl;
+      } catch (err) {
+        console.error('Gagal upload foto identitas:', err);
+        alert('Gagal upload foto identitas: ' + (err.message || ''));
+        return;
+      }
+    }
 
     const payload = {
       kos_id: currentCatatanKosId,
       owner_id: currentUser.id,
+      nama_penghuni: namaPenghuni || null,
       nomor_kamar: nomorKamar,
       tanggal_masuk: tglMasuk,
       tanggal_keluar: tglKeluar,
       tanggal_tagihan: tglTagihan,
       status: status,
       keterangan: keterangan,
+      foto_identitas_url: fotoUrl,
     };
 
     try {
       if (editingCatatanId) {
-        // Jika tanggal tagihan diubah, reset status reminder supaya bisa diingatkan lagi
         const existing = catatanSewaData.find(c => c.id === editingCatatanId);
         if (existing && existing.tanggal_tagihan !== tglTagihan) payload.reminder_sent = false;
         const { error } = await sbClient.from('catatan_sewa').update(payload).eq('id', editingCatatanId);
@@ -3393,7 +3448,7 @@ function installPWA() {
       await loadCatatanSewaList();
     } catch (err) {
       console.error('Gagal simpan catatan sewa:', err);
-      alert('Gagal menyimpan catatan: ' + (err.message || 'Pastikan tabel catatan_sewa sudah dibuat di Supabase.'));
+      alert('Gagal menyimpan catatan: ' + (err.message || ''));
     }
   }
 
