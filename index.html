@@ -1849,6 +1849,25 @@ function installPWA() {
     </div>
   </div>
 
+  <!-- ===== CATATAN SEWA (per kos) ===== -->
+  <div id="screen-catatan-sewa" class="screen">
+    <div class="tambah-header">
+      <span style="font-size:20px;cursor:pointer" onclick="showKelolaKos()">←</span>
+      <div>
+        <h2 style="font-size:18px;font-weight:800;margin:0">📒 Catatan Sewa</h2>
+        <div style="font-size:12px;color:var(--text-3)" id="catatanSewaKosName">-</div>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding-bottom:20px">
+      <div style="padding:16px" id="catatanSewaList">
+        <div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:13px">Memuat catatan...</div>
+      </div>
+    </div>
+    <div style="padding:0 16px 30px">
+      <button class="btn-primary" onclick="openCatatanForm(null)">➕ Tambah Catatan</button>
+    </div>
+  </div>
+
   <div id="screen-tambah-kos" class="screen">
     <div class="tambah-header">
       <span style="font-size:20px;cursor:pointer" onclick="showKelolaKos()">←</span>
@@ -3168,8 +3187,8 @@ function installPWA() {
         <div class="kk-card">
           <div class="kk-card-top">
             <div class="kk-img">${imgHtml}</div>
-            <div style="flex:1">
-              <div class="kk-name">${kos.nama_kos}</div>
+            <div style="flex:1;cursor:pointer" onclick="showCatatanSewa('${kos.id}', '${kos.nama_kos.replace(/'/g, "\\'")}')">
+              <div class="kk-name">${kos.nama_kos} <span style="font-size:11px;color:var(--orange);font-weight:600">📒 Catatan Sewa ›</span></div>
               <div class="kk-addr">📍 ${kos.alamat}</div>
               <div class="kk-meta">${formatRupiah(kos.harga_per_bulan)}/bln • ${jumlahKamar} kamar</div>
               ${verifInfo}
@@ -3218,6 +3237,217 @@ function installPWA() {
     } catch (err) {
       console.error(err);
       alert('Gagal menghapus kos: ' + (err.message || ''));
+    }
+  }
+
+  // ===== CATATAN SEWA (buku catatan manual per kos) =====
+  let currentCatatanKosId = null;
+  let currentCatatanKosName = '';
+  let catatanSewaData = [];
+  let editingCatatanId = null;
+
+  function showCatatanSewa(kosId, namaKos) {
+    currentCatatanKosId = kosId;
+    currentCatatanKosName = namaKos;
+    document.getElementById('catatanSewaKosName').textContent = namaKos;
+    show('catatan-sewa', 'kelola-kos');
+    loadCatatanSewaList();
+  }
+
+  async function loadCatatanSewaList() {
+    const container = document.getElementById('catatanSewaList');
+    if (!container || !currentCatatanKosId) return;
+    container.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:13px">Memuat catatan...</div>';
+    try {
+      const { data, error } = await sbClient
+        .from('catatan_sewa')
+        .select('*')
+        .eq('kos_id', currentCatatanKosId)
+        .order('tanggal_tagihan', { ascending: true });
+      if (error) throw error;
+      catatanSewaData = data || [];
+      renderCatatanSewaList();
+    } catch (err) {
+      console.error('Gagal memuat catatan sewa:', err);
+      container.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--text-3);font-size:13px">Gagal memuat catatan. Pastikan tabel catatan_sewa sudah dibuat di Supabase.</div>';
+    }
+  }
+
+  const CATATAN_STATUS_STYLE = {
+    aktif:     { label: 'Aktif',     bg: '#DCFCE7', color: '#16A34A' },
+    menunggak: { label: 'Menunggak', bg: '#FEE2E2', color: '#DC2626' },
+    lunas:     { label: 'Lunas',     bg: '#DBEAFE', color: '#2563EB' },
+    keluar:    { label: 'Keluar',    bg: '#F1F5F9', color: '#64748B' },
+  };
+
+  function renderCatatanSewaList() {
+    const container = document.getElementById('catatanSewaList');
+    if (!catatanSewaData.length) {
+      container.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:13px">Belum ada catatan sewa. Tambahkan catatan pertama untuk kos ini.</div>';
+      return;
+    }
+    const todayStr = new Date().toISOString().split('T')[0];
+    container.innerHTML = catatanSewaData.map(c => {
+      const st = CATATAN_STATUS_STYLE[c.status] || CATATAN_STATUS_STYLE.aktif;
+      const tgl = (d) => d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+      const isDekat = c.tanggal_tagihan && c.tanggal_tagihan >= todayStr &&
+        (new Date(c.tanggal_tagihan) - new Date(todayStr)) / 86400000 <= 7 &&
+        c.status !== 'lunas' && c.status !== 'keluar';
+      const isLewat = c.tanggal_tagihan && c.tanggal_tagihan < todayStr && c.status !== 'lunas' && c.status !== 'keluar';
+      return `
+        <div style="background:white;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+            <div style="font-weight:800;font-size:14px">🚪 Kamar ${c.nomor_kamar || '-'}</div>
+            <div style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px;background:${st.bg};color:${st.color}">${st.label}</div>
+          </div>
+          <div style="font-size:12.5px;color:var(--text-2);line-height:1.9">
+            <div>📅 Masuk: <b>${tgl(c.tanggal_masuk)}</b> ${c.tanggal_keluar ? `— Keluar: <b>${tgl(c.tanggal_keluar)}</b>` : ''}</div>
+            <div>💵 Tagihan: <b style="${isLewat ? 'color:var(--red)' : isDekat ? 'color:var(--orange)' : ''}">${tgl(c.tanggal_tagihan)}</b> ${isLewat ? ' ⚠️ Terlambat' : isDekat ? ' 🔔 Segera' : ''}</div>
+            ${c.keterangan ? `<div>📝 ${c.keterangan}</div>` : ''}
+            <div style="font-size:11px;color:var(--text-3);margin-top:2px">Dicatat: ${tgl(c.tanggal_dicatat)}</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button onclick="openCatatanForm('${c.id}')" style="flex:1;padding:9px;background:var(--bg-2);border:none;border-radius:10px;font-size:12.5px;font-weight:700;color:var(--text);cursor:pointer">✏️ Edit</button>
+            <button onclick="confirmDeleteCatatan('${c.id}')" style="flex:1;padding:9px;background:#FEE2E2;border:none;border-radius:10px;font-size:12.5px;font-weight:700;color:var(--red);cursor:pointer">🗑️ Hapus</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function openCatatanForm(id) {
+    editingCatatanId = id;
+    const existing = id ? catatanSewaData.find(c => c.id === id) : null;
+    const modal = document.createElement('div');
+    modal.id = 'catatanFormModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:flex-end;justify-content:center';
+    modal.innerHTML = `
+      <div style="background:white;border-radius:20px 20px 0 0;padding:22px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">
+        <div style="font-size:16px;font-weight:800;margin-bottom:16px">${existing ? '✏️ Edit Catatan Sewa' : '➕ Tambah Catatan Sewa'}</div>
+
+        <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Nomor Kamar</label>
+        <input type="text" id="cfNomorKamar" placeholder="Contoh: 05" value="${existing ? existing.nomor_kamar || '' : ''}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 14px;font-size:14px">
+
+        <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Tanggal Masuk</label>
+        <input type="date" id="cfTglMasuk" value="${existing ? existing.tanggal_masuk || '' : ''}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 14px;font-size:14px">
+
+        <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Tanggal Keluar (opsional)</label>
+        <input type="date" id="cfTglKeluar" value="${existing ? existing.tanggal_keluar || '' : ''}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 14px;font-size:14px">
+
+        <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Tanggal Tagihan Berikutnya</label>
+        <input type="date" id="cfTglTagihan" value="${existing ? existing.tanggal_tagihan || '' : ''}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 14px;font-size:14px">
+
+        <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Status</label>
+        <select id="cfStatus" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 14px;font-size:14px">
+          <option value="aktif" ${existing && existing.status === 'aktif' ? 'selected' : ''}>Aktif</option>
+          <option value="menunggak" ${existing && existing.status === 'menunggak' ? 'selected' : ''}>Menunggak</option>
+          <option value="lunas" ${existing && existing.status === 'lunas' ? 'selected' : ''}>Lunas</option>
+          <option value="keluar" ${existing && existing.status === 'keluar' ? 'selected' : ''}>Keluar</option>
+        </select>
+
+        <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Keterangan (opsional)</label>
+        <textarea id="cfKeterangan" rows="2" placeholder="Catatan tambahan..." style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 18px;font-size:14px;resize:vertical">${existing ? existing.keterangan || '' : ''}</textarea>
+
+        <div style="display:flex;gap:10px">
+          <button onclick="document.getElementById('catatanFormModal').remove()" style="flex:1;padding:13px;background:var(--bg-2);border:none;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer">Batal</button>
+          <button onclick="saveCatatanForm()" style="flex:1;padding:13px;background:var(--orange);color:white;border:none;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer">Simpan</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+
+  async function saveCatatanForm() {
+    const nomorKamar = document.getElementById('cfNomorKamar').value.trim();
+    const tglMasuk = document.getElementById('cfTglMasuk').value || null;
+    const tglKeluar = document.getElementById('cfTglKeluar').value || null;
+    const tglTagihan = document.getElementById('cfTglTagihan').value || null;
+    const status = document.getElementById('cfStatus').value;
+    const keterangan = document.getElementById('cfKeterangan').value.trim() || null;
+
+    if (!nomorKamar) { alert('Nomor kamar wajib diisi.'); return; }
+
+    const payload = {
+      kos_id: currentCatatanKosId,
+      owner_id: currentUser.id,
+      nomor_kamar: nomorKamar,
+      tanggal_masuk: tglMasuk,
+      tanggal_keluar: tglKeluar,
+      tanggal_tagihan: tglTagihan,
+      status: status,
+      keterangan: keterangan,
+    };
+
+    try {
+      if (editingCatatanId) {
+        // Jika tanggal tagihan diubah, reset status reminder supaya bisa diingatkan lagi
+        const existing = catatanSewaData.find(c => c.id === editingCatatanId);
+        if (existing && existing.tanggal_tagihan !== tglTagihan) payload.reminder_sent = false;
+        const { error } = await sbClient.from('catatan_sewa').update(payload).eq('id', editingCatatanId);
+        if (error) throw error;
+      } else {
+        payload.tanggal_dicatat = new Date().toISOString().split('T')[0];
+        payload.reminder_sent = false;
+        const { error } = await sbClient.from('catatan_sewa').insert(payload);
+        if (error) throw error;
+      }
+      document.getElementById('catatanFormModal').remove();
+      await loadCatatanSewaList();
+    } catch (err) {
+      console.error('Gagal simpan catatan sewa:', err);
+      alert('Gagal menyimpan catatan: ' + (err.message || 'Pastikan tabel catatan_sewa sudah dibuat di Supabase.'));
+    }
+  }
+
+  function confirmDeleteCatatan(id) {
+    if (confirm('Yakin ingin menghapus catatan sewa ini?')) deleteCatatanSewa(id);
+  }
+
+  async function deleteCatatanSewa(id) {
+    try {
+      const { error } = await sbClient.from('catatan_sewa').delete().eq('id', id);
+      if (error) throw error;
+      await loadCatatanSewaList();
+    } catch (err) {
+      console.error('Gagal hapus catatan sewa:', err);
+      alert('Gagal menghapus catatan.');
+    }
+  }
+
+  // Cek tagihan yang akan jatuh tempo dalam 7 hari, kirim notifikasi otomatis (sekali per catatan)
+  async function checkTagihanReminders() {
+    if (!currentUser || !myKosData.length) return;
+    try {
+      const kosIds = myKosData.map(k => k.id);
+      const todayStr = new Date().toISOString().split('T')[0];
+      const h7 = new Date();
+      h7.setDate(h7.getDate() + 7);
+      const h7Str = h7.toISOString().split('T')[0];
+
+      const { data, error } = await sbClient
+        .from('catatan_sewa')
+        .select('*, kos(nama_kos)')
+        .in('kos_id', kosIds)
+        .eq('reminder_sent', false)
+        .not('status', 'in', '(lunas,keluar)')
+        .gte('tanggal_tagihan', todayStr)
+        .lte('tanggal_tagihan', h7Str);
+
+      if (error) throw error;
+      if (!data || !data.length) return;
+
+      for (const c of data) {
+        const namaKos = (c.kos && c.kos.nama_kos) || 'Kos Anda';
+        const tglLabel = new Date(c.tanggal_tagihan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        await kirimNotifikasi(
+          currentUser.id,
+          '🔔 Pengingat Tagihan Sewa',
+          `Kamar ${c.nomor_kamar} — ${namaKos} jatuh tempo tagihan pada ${tglLabel}.`,
+          'reminder'
+        );
+        await sbClient.from('catatan_sewa').update({ reminder_sent: true }).eq('id', c.id);
+      }
+      loadNotifikasi();
+    } catch (err) {
+      console.error('Gagal cek reminder tagihan:', err);
     }
   }
 
@@ -3424,6 +3654,7 @@ function installPWA() {
       myKosData = data || [];
       renderOwnerStats();
       loadRecentBookingDashboard(); // load pemesanan terbaru
+      checkTagihanReminders(); // cek pengingat tagihan H-7
     } catch (err) {
       console.error('Gagal memuat kos milik owner:', err);
     }
