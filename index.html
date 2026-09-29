@@ -934,7 +934,7 @@ function installPWA() {
         <label class="form-label">Password</label>
         <div style="position:relative">
           <input class="form-input" id="loginPassword" type="password" placeholder="Masukkan password" style="padding-right:48px">
-          <span onclick="togglePassword('loginPassword',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:var(--text-3);user-select:none">👁️</span>
+          <span onclick="togglePassword('loginPassword',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:var(--text-3);user-select:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
         </div>
       </div>
       <div id="loginError" style="color:var(--red);font-size:13px;margin-bottom:8px;display:none"></div>
@@ -947,8 +947,57 @@ function installPWA() {
       <div class="register-link">Belum punya akun? <a href="#" onclick="showRegister()">Daftar disini</a></div>
       <div style="text-align:center;margin-top:28px;padding-bottom:16px">
         <div style="font-size:11px;color:#9ca3af">powered by. IdeA1</div>
-        <div style="font-size:11px;color:#9ca3af;margin-top:2px">v.01.7.1</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px" onclick="handleAdminTap()" id="versionTap">v.01.7.1</div>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN LOGIN ===== -->
+  <div id="screen-admin-login" class="screen" style="background:#1A1A2E">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px">
+      <div style="width:64px;height:64px;background:var(--orange);border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;font-size:28px">🛡️</div>
+      <div style="font-size:22px;font-weight:800;color:white;margin-bottom:6px">Admin Panel</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:32px">KosKu Solo — Akses Terbatas</div>
+
+      <div style="width:100%;max-width:380px">
+        <div style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:6px">Email Admin</div>
+        <input type="email" id="adminEmail" placeholder="admin@kosku-solo.com" style="width:100%;padding:14px;background:#2D2D44;border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;color:white;font-size:14px;margin-bottom:14px">
+
+        <div style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:6px">Password</div>
+        <div style="position:relative">
+          <input type="password" id="adminPass" placeholder="Password admin" style="width:100%;padding:14px;background:#2D2D44;border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;color:white;font-size:14px;margin-bottom:6px">
+        </div>
+        <div id="adminLoginErr" style="font-size:12px;color:#FF6B6B;margin-bottom:14px;display:none">Email atau password salah.</div>
+        <button onclick="handleAdminLogin()" style="width:100%;padding:15px;background:var(--orange);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:16px">Masuk sebagai Admin</button>
+        <div style="text-align:center;font-size:13px;color:rgba(255,255,255,0.4);cursor:pointer" onclick="showLogin()">← Kembali ke Login Biasa</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN DASHBOARD ===== -->
+  <div id="screen-admin-dashboard" class="screen" style="background:#F4F5F7">
+    <!-- Header Admin -->
+    <div style="background:linear-gradient(135deg,#1A1A2E,#2D2D5E);padding:52px 18px 18px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.6)">Admin Panel</div>
+        <div style="font-size:18px;font-weight:800;color:white">KosKu Solo</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div style="background:var(--orange);color:white;font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px">🛡️ Admin</div>
+        <div onclick="handleAdminLogout()" style="background:rgba(255,255,255,0.1);color:white;font-size:12px;padding:7px 14px;border-radius:10px;cursor:pointer">Keluar</div>
+      </div>
+    </div>
+
+    <!-- Tab navigasi admin -->
+    <div style="background:white;display:flex;border-bottom:1px solid #E5E7EB;overflow-x:auto">
+      <div class="admin-tab active" onclick="switchAdminTab('stats')" id="tab-stats" style="padding:13px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--orange);color:var(--orange)">📊 Statistik</div>
+      <div class="admin-tab" onclick="switchAdminTab('banner')" id="tab-banner" style="padding:13px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text-3)">🖼️ Banner</div>
+      <div class="admin-tab" onclick="switchAdminTab('kos')" id="tab-kos" style="padding:13px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text-3)">🏠 Kelola Kos</div>
+      <div class="admin-tab" onclick="switchAdminTab('users')" id="tab-users" style="padding:13px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text-3)">👥 Pengguna</div>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:16px" id="adminContent">
+      <div style="text-align:center;padding:40px 0;color:var(--text-3)">Memuat data...</div>
     </div>
   </div>
 
@@ -983,14 +1032,14 @@ function installPWA() {
         <label class="form-label">Password</label>
         <div style="position:relative">
           <input class="form-input" id="regPassword" type="password" placeholder="Min. 6 karakter" style="padding-right:48px">
-          <span onclick="togglePassword('regPassword',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:var(--text-3);user-select:none">👁️</span>
+          <span onclick="togglePassword('regPassword',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:var(--text-3);user-select:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
         </div>
       </div>
       <div class="form-group">
         <label class="form-label">Konfirmasi Password</label>
         <div style="position:relative">
           <input class="form-input" id="regPasswordConfirm" type="password" placeholder="Ulangi password" style="padding-right:48px">
-          <span onclick="togglePassword('regPasswordConfirm',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:var(--text-3);user-select:none">👁️</span>
+          <span onclick="togglePassword('regPasswordConfirm',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:var(--text-3);user-select:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
         </div>
       </div>
       <div id="regError" style="color:var(--red);font-size:13px;margin-bottom:12px;display:none"></div>
@@ -2032,14 +2081,14 @@ function installPWA() {
           <label class="form-label">Password Baru</label>
           <div style="position:relative">
             <input class="form-input" id="settingPassword" type="password" placeholder="Min. 6 karakter" style="padding-right:48px">
-            <span onclick="togglePassword('settingPassword',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:var(--text-3)">👁️</span>
+            <span onclick="togglePassword('settingPassword',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:var(--text-3)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Konfirmasi Password Baru</label>
           <div style="position:relative">
             <input class="form-input" id="settingPasswordConfirm" type="password" placeholder="Ulangi password baru" style="padding-right:48px">
-            <span onclick="togglePassword('settingPasswordConfirm',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:var(--text-3)">👁️</span>
+            <span onclick="togglePassword('settingPasswordConfirm',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:var(--text-3)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
           </div>
         </div>
         <div id="settingPasswordMsg" style="font-size:13px;margin-bottom:10px;display:none"></div>
@@ -5690,11 +5739,264 @@ function installPWA() {
     const input = document.getElementById(inputId);
     if (input.type === 'password') {
       input.type = 'text';
-      iconEl.textContent = '🙈';
+      iconEl.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+      iconEl.style.color = 'var(--orange)';
     } else {
       input.type = 'password';
-      iconEl.textContent = '👁️';
+      iconEl.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+      iconEl.style.color = 'var(--text-3)';
     }
+  }
+
+  // ===== ADMIN PANEL =====
+  let adminSession = null;
+  let adminTapCount = 0;
+  let adminTapTimer = null;
+
+  // Ketuk versi 5x untuk buka admin login
+  function handleAdminTap() {
+    adminTapCount++;
+    clearTimeout(adminTapTimer);
+    if (adminTapCount >= 5) {
+      adminTapCount = 0;
+      show('admin-login');
+    }
+    adminTapTimer = setTimeout(() => { adminTapCount = 0; }, 2000);
+  }
+
+  function showLogin() { show('login'); }
+
+  async function handleAdminLogin() {
+    const email = document.getElementById('adminEmail').value.trim();
+    const pass = document.getElementById('adminPass').value;
+    const errEl = document.getElementById('adminLoginErr');
+    errEl.style.display = 'none';
+    if (!email || !pass) { errEl.textContent = 'Email dan password wajib diisi.'; errEl.style.display = 'block'; return; }
+    try {
+      const { data, error } = await sbClient
+        .from('admin_users')
+        .select('*')
+        .eq('email', email)
+        .eq('password_hash', pass)
+        .single();
+      if (error || !data) { errEl.textContent = 'Email atau password salah.'; errEl.style.display = 'block'; return; }
+      adminSession = data;
+      show('admin-dashboard');
+      switchAdminTab('stats');
+    } catch (err) {
+      errEl.textContent = 'Gagal login: ' + (err.message || '');
+      errEl.style.display = 'block';
+    }
+  }
+
+  function handleAdminLogout() {
+    adminSession = null;
+    show('login');
+  }
+
+  function switchAdminTab(tab) {
+    ['stats','banner','kos','users'].forEach(t => {
+      const el = document.getElementById('tab-'+t);
+      if (el) { el.style.borderBottomColor = t === tab ? 'var(--orange)' : 'transparent'; el.style.color = t === tab ? 'var(--orange)' : 'var(--text-3)'; }
+    });
+    if (tab === 'stats') loadAdminStats();
+    else if (tab === 'banner') loadAdminBanner();
+    else if (tab === 'kos') loadAdminKos();
+    else if (tab === 'users') loadAdminUsers();
+  }
+
+  function adminCard(title, value, icon, color) {
+    return `<div style="background:white;border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+      <div style="width:46px;height:46px;border-radius:14px;background:${color}22;display:flex;align-items:center;justify-content:center;font-size:22px">${icon}</div>
+      <div><div style="font-size:22px;font-weight:800;color:var(--text)">${value}</div><div style="font-size:12px;color:var(--text-3);margin-top:1px">${title}</div></div>
+    </div>`;
+  }
+
+  async function loadAdminStats() {
+    const el = document.getElementById('adminContent');
+    el.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-3)">Memuat statistik...</div>';
+    try {
+      const [kosRes, userRes, bookRes, activeBookRes] = await Promise.all([
+        sbClient.from('kos').select('id', { count:'exact', head:true }),
+        sbClient.from('profiles').select('id', { count:'exact', head:true }),
+        sbClient.from('bookings').select('id', { count:'exact', head:true }),
+        sbClient.from('bookings').select('id', { count:'exact', head:true }).eq('status','diterima'),
+      ]);
+      const totalKos = kosRes.count || 0;
+      const totalUser = userRes.count || 0;
+      const totalBook = bookRes.count || 0;
+      const activeBook = activeBookRes.count || 0;
+
+      // Booking terbaru
+      const { data: recentBook } = await sbClient.from('bookings').select('*, kos(nama_kos), profiles(nama_lengkap)').order('created_at', { ascending:false }).limit(5);
+
+      el.innerHTML = `
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px">Ringkasan Platform</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+          ${adminCard('Total Kos', totalKos, '🏠', '#FF7A00')}
+          ${adminCard('Total Pengguna', totalUser, '👥', '#2563EB')}
+          ${adminCard('Total Booking', totalBook, '📋', '#7C3AED')}
+          ${adminCard('Booking Aktif', activeBook, '✅', '#16A34A')}
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px">Booking Terbaru</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${(recentBook||[]).map(b => `
+            <div style="background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:13.5px;font-weight:700">${b.kos?.nama_kos || '-'}</div>
+                <div style="font-size:11px;padding:3px 9px;border-radius:50px;background:${b.status==='diterima'?'#DCFCE7':b.status==='ditolak'?'#FEE2E2':'#FFF7CD'};color:${b.status==='diterima'?'#16A34A':b.status==='ditolak'?'#DC2626':'#CA8A04'};font-weight:700">${b.status}</div>
+              </div>
+              <div style="font-size:12px;color:var(--text-3);margin-top:4px">Oleh: ${b.profiles?.nama_lengkap || '-'} · ${new Date(b.created_at).toLocaleDateString('id-ID')}</div>
+            </div>`).join('')}
+        </div>`;
+    } catch(err) {
+      el.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--red)">Gagal memuat: ${err.message}</div>`;
+    }
+  }
+
+  async function loadAdminBanner() {
+    const el = document.getElementById('adminContent');
+    el.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-3)">Memuat banner...</div>';
+    try {
+      const { data } = await sbClient.from('banner_promo').select('*').order('urutan');
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="font-size:14px;font-weight:700">Kelola Banner Promo</div>
+          <button onclick="openAdminBannerForm(null)" style="background:var(--orange);color:white;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer">+ Tambah</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${(data||[]).map(b => `
+            <div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+              ${b.gambar_url ? `<img src="${b.gambar_url}" style="width:100%;height:100px;object-fit:cover">` : '<div style="width:100%;height:60px;background:#F3F4F6;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:12px">Belum ada gambar</div>'}
+              <div style="padding:10px 12px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <div style="font-size:13px;font-weight:700">${b.nama || '-'}</div>
+                  <div style="font-size:11px;padding:3px 9px;border-radius:50px;background:${b.aktif?'#DCFCE7':'#F3F4F6'};color:${b.aktif?'#16A34A':'#9CA3AF'};font-weight:700">${b.aktif?'Aktif':'Nonaktif'}</div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:8px">
+                  <button onclick="openAdminBannerForm('${b.id}')" style="flex:1;padding:8px;background:#F3F4F6;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✏️ Edit</button>
+                  <button onclick="deleteAdminBanner('${b.id}')" style="flex:1;padding:8px;background:#FEE2E2;border:none;border-radius:8px;font-size:12px;font-weight:700;color:var(--red);cursor:pointer">🗑️ Hapus</button>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>`;
+    } catch(err) {
+      el.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--red)">Gagal: ${err.message}</div>`;
+    }
+  }
+
+  function openAdminBannerForm(id) {
+    const modal = document.createElement('div');
+    modal.id = 'adminBannerModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:flex-end;justify-content:center';
+    modal.innerHTML = `
+      <div style="background:white;border-radius:20px 20px 0 0;padding:22px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto">
+        <div style="font-size:15px;font-weight:800;margin-bottom:16px">${id ? '✏️ Edit Banner' : '➕ Tambah Banner'}</div>
+        <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Nama Banner</label>
+        <input type="text" id="abNama" placeholder="Nama banner" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 14px;font-size:14px">
+        <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">URL Gambar</label>
+        <input type="text" id="abGambar" placeholder="https://..." style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 14px;font-size:14px">
+        <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Link Tujuan (opsional)</label>
+        <input type="text" id="abLink" placeholder="https://..." style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 14px;font-size:14px">
+        <label style="font-size:12.5px;font-weight:700;color:var(--text-2)">Urutan</label>
+        <input type="number" id="abUrutan" placeholder="0" value="0" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin:6px 0 14px;font-size:14px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-bottom:18px;cursor:pointer">
+          <input type="checkbox" id="abAktif" checked> Banner Aktif
+        </label>
+        <div style="display:flex;gap:10px">
+          <button onclick="document.getElementById('adminBannerModal').remove()" style="flex:1;padding:13px;background:var(--bg-2);border:none;border-radius:10px;font-weight:700;cursor:pointer">Batal</button>
+          <button onclick="saveAdminBanner('${id||''}')" style="flex:1;padding:13px;background:var(--orange);color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Simpan</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+
+  async function saveAdminBanner(id) {
+    const payload = {
+      nama: document.getElementById('abNama').value.trim(),
+      gambar_url: document.getElementById('abGambar').value.trim() || null,
+      link_tujuan: document.getElementById('abLink').value.trim() || null,
+      urutan: parseInt(document.getElementById('abUrutan').value) || 0,
+      aktif: document.getElementById('abAktif').checked,
+    };
+    try {
+      if (id) await sbClient.from('banner_promo').update(payload).eq('id', id);
+      else await sbClient.from('banner_promo').insert(payload);
+      document.getElementById('adminBannerModal').remove();
+      loadAdminBanner();
+    } catch(err) { alert('Gagal simpan: ' + err.message); }
+  }
+
+  async function deleteAdminBanner(id) {
+    if (!confirm('Hapus banner ini?')) return;
+    await sbClient.from('banner_promo').delete().eq('id', id);
+    loadAdminBanner();
+  }
+
+  async function loadAdminKos() {
+    const el = document.getElementById('adminContent');
+    el.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-3)">Memuat data kos...</div>';
+    try {
+      const { data } = await sbClient.from('kos').select('*, profiles(nama_lengkap)').order('created_at', { ascending:false });
+      el.innerHTML = `
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px">Semua Kos (${(data||[]).length})</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${(data||[]).map(k => `
+            <div style="background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.nama_kos}</div>
+                  <div style="font-size:12px;color:var(--text-3);margin-top:2px">👤 ${k.profiles?.nama_lengkap||'-'} · 📍 ${k.alamat||'-'}</div>
+                  <div style="font-size:12px;color:var(--orange);font-weight:600;margin-top:2px">${formatRupiah(k.harga_per_bulan)}/bln</div>
+                </div>
+                <div style="margin-left:8px;flex-shrink:0">
+                  <button onclick="adminDeleteKos('${k.id}','${k.nama_kos.replace(/'/g,"\\'")}')" style="padding:7px 12px;background:#FEE2E2;border:none;border-radius:8px;font-size:12px;font-weight:700;color:var(--red);cursor:pointer">🗑️ Hapus</button>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>`;
+    } catch(err) {
+      el.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--red)">Gagal: ${err.message}</div>`;
+    }
+  }
+
+  async function adminDeleteKos(id, nama) {
+    if (!confirm(`Hapus kos "${nama}"? Semua data terkait akan ikut terhapus.`)) return;
+    await sbClient.from('kos').delete().eq('id', id);
+    loadAdminKos();
+  }
+
+  async function loadAdminUsers() {
+    const el = document.getElementById('adminContent');
+    el.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-3)">Memuat data pengguna...</div>';
+    try {
+      const { data } = await sbClient.from('profiles').select('*').order('created_at', { ascending:false });
+      el.innerHTML = `
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px">Semua Pengguna (${(data||[]).length})</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${(data||[]).map(u => `
+            <div style="background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="font-size:13.5px;font-weight:700">${u.nama_lengkap||'-'}</div>
+                    <div style="font-size:11px;padding:2px 8px;border-radius:50px;background:${u.role==='pemilik'?'#FFE4D6':'#DBEAFE'};color:${u.role==='pemilik'?'#EA580C':'#2563EB'};font-weight:700">${u.role}</div>
+                  </div>
+                  <div style="font-size:12px;color:var(--text-3);margin-top:3px">${u.email||'-'} · ${u.no_hp||'-'}</div>
+                </div>
+                <button onclick="adminDeleteUser('${u.id}','${(u.nama_lengkap||'-').replace(/'/g,"\\'")}')" style="padding:7px 12px;background:#FEE2E2;border:none;border-radius:8px;font-size:12px;font-weight:700;color:var(--red);cursor:pointer;margin-left:8px;flex-shrink:0">🗑️</button>
+              </div>
+            </div>`).join('')}
+        </div>`;
+    } catch(err) {
+      el.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--red)">Gagal: ${err.message}</div>`;
+    }
+  }
+
+  async function adminDeleteUser(id, nama) {
+    if (!confirm(`Hapus akun "${nama}"? Tindakan ini permanen.`)) return;
+    await sbClient.from('profiles').delete().eq('id', id);
+    loadAdminUsers();
   }
 
   // Toggle FAQ item expand/collapse
