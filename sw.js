@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kosku-solo-v1';
+const CACHE_NAME = 'kosku-solo-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -32,22 +32,32 @@ self.addEventListener('activate', function(event) {
 });
 
 // Fetch: network first, fallback ke cache
+// PENTING: hanya tangani GET ke domain aplikasi sendiri.
+// Request ke Supabase (login, database, storage) dan semua POST/PATCH/DELETE
+// dibiarkan langsung ke jaringan, tidak disentuh service worker.
 self.addEventListener('fetch', function(event) {
+  const req = event.request;
+  const url = new URL(req.url);
+
+  if (req.method !== 'GET' || url.origin !== self.location.origin) {
+    return; // biarkan browser menangani sendiri
+  }
+
   event.respondWith(
-    fetch(event.request)
+    fetch(req)
       .then(function(response) {
-        // Simpan response ke cache
         if (response && response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(event.request, responseClone);
+            cache.put(req, responseClone);
           });
         }
         return response;
       })
       .catch(function() {
-        // Kalau offline, ambil dari cache
-        return caches.match(event.request);
+        return caches.match(req).then(function(cached) {
+          return cached || caches.match('/index.html');
+        });
       })
   );
 });
