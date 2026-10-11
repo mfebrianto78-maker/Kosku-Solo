@@ -24,7 +24,12 @@
     globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
     moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
     camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
-    pencil: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>'
+    pencil: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+    lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
+    phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',
+    calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
   };
 
   function svg(name, size, strokeWidth) {
@@ -130,6 +135,177 @@
     editBtn.innerHTML = svg('pencil', 14, 2.2) + '<span>Edit Profil</span>';
   }
 
+  // =====================================================
+  // 6. Pisahkan halaman: Profil Saya, Edit Profil, Pengaturan
+  //    (sebelumnya ketiganya membuka halaman yang sama)
+  // =====================================================
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  const pengScreen = document.getElementById('screen-pengaturan');
+  const pengCards = pengScreen ? pengScreen.querySelectorAll('.form-card') : [];
+  const editCard = pengCards[0] || null;      // Edit Profil
+  const passCard = pengCards[1] || null;      // Ganti Password
+  const toggleMenu = pengScreen ? pengScreen.querySelector('.profil-menu') : null; // Notifikasi/Bahasa/Mode Gelap
+  const pengTitle = pengScreen ? pengScreen.querySelector('.top-bar h2') : null;
+
+  // Judul kartu & tombol tanpa emoji
+  function setCardTitle(card, icon, text) {
+    const h3 = card && card.querySelector('h3');
+    if (!h3) return;
+    h3.style.cssText = 'display:flex;align-items:center;gap:10px';
+    h3.innerHTML =
+      `<span style="width:32px;height:32px;border-radius:10px;background:var(--orange-light);color:var(--orange);display:flex;align-items:center;justify-content:center">${svg(icon, 17)}</span>${text}`;
+  }
+  setCardTitle(editCard, 'user', 'Edit Profil');
+  setCardTitle(passCard, 'lock', 'Ganti Password');
+
+  const profilBtn = document.getElementById('settingProfilBtn');
+  const passBtn = document.getElementById('settingPasswordBtn');
+  if (profilBtn) profilBtn.textContent = 'Simpan Perubahan';
+  if (passBtn) passBtn.textContent = 'Ganti Password';
+
+  // Setelah simpan, aplikasi lama memasang emoji lagi — rapikan kembali
+  const origUpdateProfil = window.handleUpdateProfil;
+  if (typeof origUpdateProfil === 'function') {
+    window.handleUpdateProfil = async function () {
+      await origUpdateProfil.apply(this, arguments);
+      if (profilBtn) profilBtn.textContent = 'Simpan Perubahan';
+    };
+  }
+  const origUpdatePass = window.handleUpdatePassword;
+  if (typeof origUpdatePass === 'function') {
+    window.handleUpdatePassword = async function () {
+      await origUpdatePass.apply(this, arguments);
+      if (passBtn) passBtn.textContent = 'Ganti Password';
+    };
+  }
+
+  const origShowPengaturan = window.showPengaturan;
+
+  function setPengMode(mode) {
+    const isEdit = mode === 'edit';
+    if (pengTitle) pengTitle.textContent = isEdit ? 'Edit Profil' : 'Pengaturan';
+    if (editCard) editCard.style.display = isEdit ? '' : 'none';
+    if (passCard) passCard.style.display = isEdit ? 'none' : '';
+    if (toggleMenu) toggleMenu.style.display = isEdit ? 'none' : '';
+    const scroller = pengScreen && pengScreen.querySelector('div[style*="overflow-y:auto"]');
+    if (scroller) scroller.scrollTop = 0;
+  }
+
+  function showEditProfil() {
+    if (typeof origShowPengaturan === 'function') origShowPengaturan();
+    setPengMode('edit');
+  }
+  function showPengaturanSaja() {
+    if (typeof origShowPengaturan === 'function') origShowPengaturan();
+    setPengMode('settings');
+  }
+
+  // Halaman baru: Profil Saya (tampilan data, bukan form)
+  function buildProfilSaya() {
+    if (document.getElementById('screen-profil-saya')) return;
+    const s = document.createElement('div');
+    s.id = 'screen-profil-saya';
+    s.className = 'screen';
+    s.style.background = 'var(--bg)';
+    s.innerHTML = `
+      <div class="top-bar" style="padding:52px 20px 14px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:20px;cursor:pointer" onclick="showProfil()">←</span>
+        <h2 style="font-size:18px;font-weight:800">Profil Saya</h2>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:16px" id="profilSayaBody"></div>`;
+    document.getElementById('app').appendChild(s);
+  }
+
+  function showProfilSaya() {
+    buildProfilSaya();
+    const p = currentUserProfile || {};
+    const isPemilik = p.role === 'pemilik';
+    const email = currentUser && currentUser.email && !currentUser.email.endsWith('@koskusolo.app') ? currentUser.email : '';
+    const joined = currentUser && currentUser.created_at
+      ? new Date(currentUser.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '-';
+
+    const row = (icon, label, value) => `
+      <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border)">
+        <div style="width:36px;height:36px;border-radius:11px;background:var(--orange-light);color:var(--orange);display:flex;align-items:center;justify-content:center;flex-shrink:0">${svg(icon, 17)}</div>
+        <div style="min-width:0">
+          <div style="font-size:11.5px;color:var(--text-3)">${label}</div>
+          <div style="font-size:14.5px;font-weight:600;color:var(--text);word-break:break-word">${value || '-'}</div>
+        </div>
+      </div>`;
+
+    const avatar = p.foto_url
+      ? `<img src="${esc(p.foto_url)}" style="width:100%;height:100%;object-fit:cover">`
+      : `<span style="color:var(--orange)">${svg('user', 40, 1.8)}</span>`;
+
+    document.getElementById('profilSayaBody').innerHTML = `
+      <div style="text-align:center;padding:10px 0 20px">
+        <div style="width:96px;height:96px;border-radius:28px;overflow:hidden;margin:0 auto 12px;background:var(--orange-light);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)">${avatar}</div>
+        <div style="font-size:19px;font-weight:800;color:var(--text)">${esc(p.nama_lengkap || 'Pengguna')}</div>
+        <div style="display:inline-block;margin-top:6px;font-size:12px;font-weight:700;padding:4px 12px;border-radius:50px;background:var(--orange-light);color:var(--orange)">${isPemilik ? 'Pemilik Kos' : 'Pencari Kos'}</div>
+      </div>
+      <div class="profil-menu" style="margin-bottom:16px">
+        ${row('user', 'Nama Lengkap', esc(p.nama_lengkap))}
+        ${row('mail', 'Email', esc(email))}
+        ${row('phone', 'Nomor HP', esc(p.no_hp))}
+        ${row('shield', 'Peran Akun', isPemilik ? 'Pemilik Kos' : 'Pencari Kos')}
+        ${row('calendar', 'Bergabung Sejak', joined)}
+      </div>
+      <button class="btn-primary" id="profilSayaEditBtn" style="display:flex;align-items:center;justify-content:center;gap:8px">${svg('pencil', 16, 2.2)}Edit Profil</button>`;
+    document.getElementById('profilSayaEditBtn').onclick = showEditProfil;
+    show('profil-saya', 'profil');
+  }
+
+  window.showEditProfil = showEditProfil;
+  window.showPengaturanSaja = showPengaturanSaja;
+  window.showProfilSaya = showProfilSaya;
+
+  // Sambungkan ulang tombol-tombolnya
+  function rewireProfilButtons() {
+    const menu = document.getElementById('profilMenu');
+    if (menu) {
+      menu.querySelectorAll('.menu-item').forEach(item => {
+        const label = (item.querySelector('.menu-item-label') || {}).textContent;
+        if (!label) return;
+        const l = label.trim();
+        if (l === 'Profil Saya') { item.removeAttribute('onclick'); item.onclick = showProfilSaya; }
+        if (l === 'Pengaturan') { item.removeAttribute('onclick'); item.onclick = showPengaturanSaja; }
+      });
+    }
+    const eb = document.querySelector('#screen-profil .profil-edit-btn');
+    if (eb) { eb.removeAttribute('onclick'); eb.onclick = showEditProfil; }
+  }
+
+  // Ikon email & HP di header Akun
+  function modernizeProfilHeader() {
+    const el = document.getElementById('profilEmail');
+    if (!el) return;
+    const iconSpan = name =>
+      `<span style="display:inline-flex;opacity:0.9;flex-shrink:0">${svg(name, 14, 2.2)}</span>`;
+    el.innerHTML = el.innerHTML.replace('✉️', iconSpan('mail')).replace('📞', iconSpan('phone'));
+  }
+
+  const origRenderProfilHeader = window.renderProfilHeader;
+  if (typeof origRenderProfilHeader === 'function') {
+    window.renderProfilHeader = function () {
+      origRenderProfilHeader.apply(this, arguments);
+      modernizeProfilHeader();
+    };
+  }
+
+  // renderProfilMenu sudah dibungkus di atas; tambahkan penyambungan ulang
+  const wrappedRenderProfilMenu = window.renderProfilMenu;
+  window.renderProfilMenu = function () {
+    wrappedRenderProfilMenu.apply(this, arguments);
+    rewireProfilButtons();
+  };
+
   // Kalau halaman Akun sudah terbuka saat file ini dimuat
   modernizeMenu(document.getElementById('profilMenu'));
+  rewireProfilButtons();
+  modernizeProfilHeader();
 })();
