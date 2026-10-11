@@ -23,7 +23,17 @@
   // jadi saat mode gelap aktif, latar putih itu ditimpa.
   const css = `
     html.kosku-dark body { background:#000 !important; }
-    html.kosku-dark #app { background:var(--bg) !important; }
+    html.kosku-dark #app { background:var(--bg) !important; color:var(--text); }
+
+    /* Tombol kembali (←) dibuat jelas di semua halaman */
+    html.kosku-dark .kosku-back {
+      display:inline-flex !important; align-items:center; justify-content:center;
+      width:40px !important; height:40px !important; border-radius:12px !important;
+      background:#2A2A2F !important; border:1.5px solid #3A3A42 !important;
+      color:#FFFFFF !important; font-size:20px !important; font-weight:700;
+      flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.35) !important;
+    }
+    html.kosku-dark .kosku-back:active { background:var(--orange) !important; border-color:var(--orange) !important; }
 
     /* Latar halaman yang ditulis langsung dengan warna terang (mis. Beranda) */
     html.kosku-dark #screen-dashboard,
@@ -124,6 +134,28 @@
     save(next);
   };
 
+  // ---------- Tandai semua tombol kembali (←) ----------
+  // Termasuk halaman yang dibuat belakangan (Kelola Kamar, Detail Kos, dll.)
+  function tagBackButtons() {
+    document.querySelectorAll('#app span, #app div, .back-btn, .detail-back').forEach(el => {
+      if (el.classList.contains('kosku-back')) return;
+      if (el.children.length) return;
+      const t = (el.textContent || '').trim();
+      if (t === '←' && (el.onclick || el.getAttribute('onclick') || el.classList.contains('back-btn') || el.classList.contains('detail-back'))) {
+        el.classList.add('kosku-back');
+      }
+    });
+  }
+
+  let tagTimer = null;
+  const observer = new MutationObserver(() => {
+    clearTimeout(tagTimer);
+    tagTimer = setTimeout(tagBackButtons, 150);
+  });
+  const appEl = document.getElementById('app');
+  if (appEl) observer.observe(appEl, { childList: true, subtree: true });
+
   injectStyle();
+  tagBackButtons();
   applyDarkMode(readSaved());
 })();
