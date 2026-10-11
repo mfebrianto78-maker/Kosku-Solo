@@ -25,6 +25,19 @@
     html.kosku-dark body { background:#000 !important; }
     html.kosku-dark #app { background:var(--bg) !important; }
 
+    /* Latar halaman yang ditulis langsung dengan warna terang (mis. Beranda) */
+    html.kosku-dark #screen-dashboard,
+    html.kosku-dark #screen-admin-dashboard,
+    html.kosku-dark [style*="background:#F7F8FA"], html.kosku-dark [style*="background:#f7f8fa"],
+    html.kosku-dark [style*="background:#F4F5F7"], html.kosku-dark [style*="background:#f4f5f7"] {
+      background: var(--bg) !important;
+    }
+    /* Label shortcut Lokasi Populer di Beranda */
+    html.kosku-dark #dashShortcutWrap [style*="color:#5C3A00"] { color: var(--text-2) !important; }
+    html.kosku-dark #dashShortcutWrap [style*="background:#FFF1E0"] {
+      background: var(--orange-light) !important; border-color: #5A3A18 !important;
+    }
+
     html.kosku-dark #screen-login, html.kosku-dark #screen-register,
     html.kosku-dark #screen-role, html.kosku-dark #screen-onboarding,
     html.kosku-dark #screen-detail, html.kosku-dark #screen-success,
