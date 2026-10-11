@@ -4229,33 +4229,6 @@ function installPWA() {
     `).join('');
   }
 
-  let dashBannerTimer = null;
-  let dashBannerIndex = 0;
-  function initDashBannerCarousel() {
-    const wrap = document.getElementById('dashBannerCarousel');
-    if (!wrap || wrap.dataset.ready) return;
-    wrap.dataset.ready = '1';
-    const slides = Array.from(wrap.querySelectorAll('.banner-slide'));
-    // acak urutan tampil
-    for (let i = slides.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      wrap.insertBefore(slides[j], slides[i].nextSibling);
-      [slides[i], slides[j]] = [slides[j], slides[i]];
-    }
-    const dotsWrap = document.getElementById('dashBannerDots');
-    dotsWrap.innerHTML = slides.map((_, i) => `<div class="banner-dot${i===0?' active':''}"></div>`).join('');
-    slides[0].classList.add('active');
-    const dots = Array.from(dotsWrap.children);
-    dashBannerIndex = 0;
-    dashBannerTimer = setInterval(() => {
-      slides[dashBannerIndex].classList.remove('active');
-      dots[dashBannerIndex].classList.remove('active');
-      dashBannerIndex = (dashBannerIndex + 1) % slides.length;
-      slides[dashBannerIndex].classList.add('active');
-      dots[dashBannerIndex].classList.add('active');
-    }, 4000);
-  }
-
   // ===== Banner "Booking Diterima" di Beranda pencari kos =====
   async function loadBookingAlertBanner() {
     const container = document.getElementById('bookingAlertBanner');
