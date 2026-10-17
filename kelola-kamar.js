@@ -46,6 +46,49 @@
     if (n <= 7) return `<span style="color:var(--orange);font-weight:700">🔔 Jatuh tempo ${n} hari lagi (${fmtTgl(dateStr)})</span>`;
     return `<span style="color:var(--text-2)">Jatuh tempo ${fmtTgl(dateStr)}</span>`;
   }
+  // ---------- WhatsApp ----------
+  function waNumber(hp) {
+    let n = String(hp || '').replace(/[^0-9]/g, '');
+    if (!n) return '';
+    if (n.startsWith('0')) n = '62' + n.slice(1);
+    else if (n.startsWith('8')) n = '62' + n;
+    return n;
+  }
+  function openWA(hp, text) {
+    const n = waNumber(hp);
+    const url = (n ? `https://wa.me/${n}` : 'https://wa.me/') + '?text=' + encodeURIComponent(text);
+    window.open(url, '_blank');
+  }
+  function reminderText(p, kamar, kos) {
+    const nama = p.nama_penghuni || 'Bapak/Ibu';
+    const harga = formatRupiah((kamar && kamar.harga) || 0);
+    const tgl = fmtTgl(p.tanggal_tagihan);
+    const n = daysUntil(p.tanggal_tagihan);
+    let status;
+    if (n === null) status = 'sudah memasuki waktu pembayaran';
+    else if (n < 0) status = `sudah melewati jatuh tempo sejak ${tgl} (${-n} hari)`;
+    else if (n === 0) status = `jatuh tempo *hari ini* (${tgl})`;
+    else status = `akan jatuh tempo pada *${tgl}* (${n} hari lagi)`;
+    return `Halo ${nama} 👋\n\n` +
+      `Ini pengingat dari *${kos.nama_kos}*.\n` +
+      `Sewa *Kamar ${kamar.nomor_kamar}* sebesar *${harga}/bulan* ${status}.\n\n` +
+      `Mohon melakukan pembayaran tepat waktu. Kalau sudah membayar, abaikan pesan ini.\n\n` +
+      `Terima kasih 🙏\n— ${kos.nama_kos} (via KosKu Solo)`;
+  }
+  function paidText(p, kamar, kos, nextTempo) {
+    return `Halo ${p.nama_penghuni || 'Bapak/Ibu'} 👋\n\n` +
+      `Pembayaran sewa *Kamar ${kamar.nomor_kamar}* di *${kos.nama_kos}* sudah kami terima. Terima kasih 🙏\n\n` +
+      `Jatuh tempo berikutnya: *${fmtTgl(nextTempo)}*.\n\n— ${kos.nama_kos} (via KosKu Solo)`;
+  }
+  function sendReminder(kamarId) {
+    const kos = currentKos();
+    const kamar = kos && (kos.kamar || []).find(k => k.id === kamarId);
+    const p = kamar && penghuniOf(kamar);
+    if (!p) return;
+    if (!p.no_hp_penghuni && !confirm('No. HP penghuni belum diisi. Buka WhatsApp dan pilih kontaknya sendiri?')) return;
+    openWA(p.no_hp_penghuni, reminderText(p, kamar, kos));
+  }
+
   const inputStyle =
     'width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14.5px;font-family:inherit;background:var(--bg);box-sizing:border-box;margin:6px 0 12px';
   const labelStyle = 'font-size:12.5px;font-weight:700;color:var(--text-2)';
@@ -186,7 +229,27 @@
       return;
     }
 
-    list.innerHTML = kamar.map(k => {
+    // Ringkasan penghuni yang jatuh tempo ≤ 7 hari / terlambat
+    const dueList = kamar
+      .map(k => ({ k, p: penghuniOf(k) }))
+      .filter(x => x.p && daysUntil(x.p.tanggal_tagihan) !== null && daysUntil(x.p.tanggal_tagihan) <= 7)
+      .sort((a, b) => daysUntil(a.p.tanggal_tagihan) - daysUntil(b.p.tanggal_tagihan));
+
+    const duePanel = dueList.length ? `
+      <div style="background:var(--card, white);border:1.5px solid var(--orange);border-radius:16px;padding:14px;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:800;margin-bottom:4px">🔔 Perlu Diingatkan (${dueList.length})</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:10px">Penghuni yang jatuh tempo dalam 7 hari atau sudah terlambat</div>
+        ${dueList.map(({ k, p }) => `
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--border)">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Kamar ${esc(k.nomor_kamar)} · ${esc(p.nama_penghuni || '-')}</div>
+              <div style="font-size:11.5px;margin-top:2px">${tempoBadge(p.tanggal_tagihan)}</div>
+            </div>
+            <button onclick="kkSendReminder('${k.id}')" style="flex-shrink:0;padding:8px 12px;background:#25D366;color:white;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer">💬 Ingatkan</button>
+          </div>`).join('')}
+      </div>` : '';
+
+    list.innerHTML = duePanel + kamar.map(k => {
       const isTerisi = k.status === 'terisi';
       const p = penghuniOf(k);
 
@@ -200,6 +263,8 @@
             </div>
             <div style="font-size:12px;color:var(--text-3);margin-top:3px">${esc(p.pekerjaan || '-')} · Tinggal sejak ${fmtTgl(p.tanggal_masuk)}</div>
             <div style="font-size:12px;margin-top:3px">${tempoBadge(p.tanggal_tagihan)}</div>
+            ${(() => { const n = daysUntil(p.tanggal_tagihan); return n !== null && n <= 7; })() ? `
+            <button onclick="event.stopPropagation();kkSendReminder('${k.id}')" style="margin-top:9px;width:100%;padding:9px;background:#25D366;color:white;border:none;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer">💬 Kirim Pengingat WhatsApp</button>` : ''}
           </div>`;
       } else if (isTerisi) {
         penghuniBlock = `
@@ -439,14 +504,16 @@
       ${row('Jatuh Tempo', fmtTgl(p.tanggal_tagihan))}
       ${p.keterangan ? row('Catatan', esc(p.keterangan)) : ''}
 
-      <button id="kkPaidBtn" style="width:100%;margin-top:16px;padding:13px;background:#16A34A;color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer">✅ Sudah Bayar Bulan Ini</button>
+      <button id="kkRemindBtn" style="width:100%;margin-top:16px;padding:13px;background:#25D366;color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer">💬 Kirim Pengingat WhatsApp</button>
+      <button id="kkPaidBtn" style="width:100%;margin-top:10px;padding:13px;background:#16A34A;color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer">✅ Sudah Bayar Bulan Ini</button>
       <div style="font-size:11px;color:var(--text-3);text-align:center;margin-top:4px">Jatuh tempo otomatis maju 1 bulan</div>
       <div style="display:flex;gap:10px;margin-top:12px">
         <button id="kkEditPBtn" style="flex:1;padding:12px;background:var(--orange-light);color:var(--orange);border:none;border-radius:12px;font-weight:700;font-size:13.5px;cursor:pointer">✏️ Edit Data</button>
         <button id="kkOutBtn" style="flex:1;padding:12px;background:#FEE2E2;color:var(--red);border:none;border-radius:12px;font-weight:700;font-size:13.5px;cursor:pointer">🚪 Penghuni Keluar</button>
       </div>`);
 
-    document.getElementById('kkPaidBtn').onclick = () => markPaid(p, modal);
+    document.getElementById('kkRemindBtn').onclick = () => sendReminder(kamarId);
+    document.getElementById('kkPaidBtn').onclick = () => markPaid(p, modal, kamar, kos);
     document.getElementById('kkEditPBtn').onclick = () => { modal.remove(); openPenghuniForm(kamarId, p); };
     document.getElementById('kkOutBtn').onclick = async () => {
       if (!confirm(`Tandai ${p.nama_penghuni || 'penghuni'} sudah keluar dari Kamar ${kamar.nomor_kamar}? Kamar akan jadi Kosong.`)) return;
@@ -455,7 +522,7 @@
     };
   }
 
-  async function markPaid(p, modal) {
+  async function markPaid(p, modal, kamar, kos) {
     const base = p.tanggal_tagihan || todayStr();
     const next = addMonth(base);
     try {
@@ -465,7 +532,9 @@
       if (error) throw error;
       modal.remove();
       await refresh();
-      alert(`Tercatat lunas. Jatuh tempo berikutnya: ${fmtTgl(next)}.`);
+      if (kamar && kos && confirm(`Tercatat lunas. Jatuh tempo berikutnya: ${fmtTgl(next)}.\n\nKirim konfirmasi pembayaran ke WhatsApp penghuni?`)) {
+        openWA(p.no_hp_penghuni, paidText(p, kamar, kos, next));
+      }
     } catch (err) {
       alert('Gagal menyimpan: ' + (err.message || ''));
     }
@@ -610,6 +679,53 @@
   window.kkOpenForm = openKamarForm;
   window.kkDelete = deleteKamar;
   window.kkShowPenghuni = showPenghuni;
+  window.kkSendReminder = sendReminder;
+
+  // =====================================================
+  // Kirim KWITANSI ke WhatsApp (menu Booking Masuk → Buat Kwitansi)
+  // =====================================================
+  function kwitansiText(kw) {
+    const tgl = kw.tanggal_bayar
+      ? new Date(kw.tanggal_bayar + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '-';
+    return `🧾 *KWITANSI PEMBAYARAN*\n` +
+      `No: ${kw.nomor_kwitansi || '-'}\n\n` +
+      `Diterima dari : ${kw.nama_penyewa || '-'}\n` +
+      `Kos / Kamar   : ${kw.nama_kos || '-'} / ${kw.nomor_kamar || '-'}\n` +
+      `Untuk         : ${kw.untuk_periode || '-'}\n` +
+      `Tanggal       : ${tgl}\n` +
+      `Metode        : ${kw.metode_bayar || '-'}\n` +
+      (kw.catatan ? `Catatan       : ${kw.catatan}\n` : '') +
+      `\n*Total Dibayar: ${formatRupiah(kw.jumlah || 0)}*\n\n` +
+      `Terima kasih 🙏\nKwitansi digital — ${kw.nama_kos || 'KosKu Solo'} (via KosKu Solo)`;
+  }
+
+  const origRenderKwitansi = window.renderKwitansiReceipt;
+  if (typeof origRenderKwitansi === 'function') {
+    window.renderKwitansiReceipt = function (kw) {
+      origRenderKwitansi.apply(this, arguments);
+
+      // Tombol WA hanya untuk pemilik kos
+      if (!(currentUserProfile && currentUserProfile.role === 'pemilik')) return;
+      const modal = document.getElementById('kwitansiReceiptModal');
+      if (!modal) return;
+      const closeBtn = modal.querySelector('button');
+      if (!closeBtn) return;
+
+      let hp = '';
+      try { hp = (typeof _kwitansiBookingCache !== 'undefined' && _kwitansiBookingCache && _kwitansiBookingCache.no_hp) || ''; } catch (e) { /* abaikan */ }
+
+      const btn = document.createElement('button');
+      btn.style.cssText = 'width:100%;padding:12px;background:#25D366;border:none;border-radius:10px;color:white;font-weight:700;font-size:13px;margin-top:16px;cursor:pointer';
+      btn.textContent = '💬 Kirim Kwitansi ke WhatsApp';
+      btn.onclick = function () {
+        if (!hp && !confirm('No. HP penyewa tidak ditemukan. Buka WhatsApp dan pilih kontaknya sendiri?')) return;
+        openWA(hp, kwitansiText(kw));
+      };
+      closeBtn.parentNode.insertBefore(btn, closeBtn);
+      closeBtn.style.marginTop = '10px';
+    };
+  }
   window.kkOpenPenghuniForm = function (kamarId, _existing) { openPenghuniForm(kamarId, null); };
 
   // Sambungkan kartu "Kelola Kamar" di dashboard pemilik
