@@ -258,7 +258,10 @@
         penghuniBlock = `
           <div onclick="kkShowPenghuni('${k.id}')" style="margin-top:12px;background:var(--bg);border-radius:12px;padding:10px 12px;cursor:pointer">
             <div style="display:flex;justify-content:space-between;align-items:center">
-              <div style="font-size:13.5px;font-weight:700">👤 ${esc(p.nama_penghuni || 'Penghuni')}</div>
+              <div style="display:flex;align-items:center;gap:9px;min-width:0">
+                <div style="width:30px;height:30px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0">${esc(String(p.nama_penghuni || 'P').trim().charAt(0).toUpperCase())}</div>
+                <div style="font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.nama_penghuni || 'Penghuni')}</div>
+              </div>
               <div style="font-size:11.5px;color:var(--orange);font-weight:700">Detail ›</div>
             </div>
             <div style="font-size:12px;color:var(--text-3);margin-top:3px">${esc(p.pekerjaan || '-')} · Tinggal sejak ${fmtTgl(p.tanggal_masuk)}</div>
@@ -274,7 +277,7 @@
       }
 
       return `
-        <div class="kk-card">
+        <div class="kk-card ${isTerisi ? 'is-terisi' : 'is-kosong'}">
           <div style="display:flex;align-items:center;gap:12px">
             <div style="width:48px;height:48px;border-radius:12px;background:${isTerisi ? 'var(--orange-light)' : '#DCFCE7'};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🛏️</div>
             <div style="flex:1;min-width:0">
