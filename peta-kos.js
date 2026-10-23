@@ -3,7 +3,7 @@
 // Dimuat lewat: <script src="peta-kos.js"></script>  (paling akhir)
 //
 // Isi:
-//  - Halaman "Peta" penuh layar (Leaflet + gaya peta CARTO, ikut mode gelap)
+//  - Halaman "Peta" penuh layar (Leaflet + peta OpenStreetMap, ikut mode gelap)
 //  - Pin berisi harga, berwarna sesuai jenis kos; pin berdekatan digabung
 //  - Kartu kos di bawah peta bisa digeser; peta ikut pindah ke kos yang aktif
 //  - Ketuk pin = kartu pindah; ketuk kartu = buka Detail Kos
@@ -23,9 +23,8 @@
 
   const WARNA = { Putri: '#EC4899', Putra: '#3B82F6', Campur: '#8B5CF6', Eksklusif: '#D97706' };
   const PUSAT_SOLO = [-7.5666, 110.8167];
-  const TILE_TERANG = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-  const TILE_GELAP = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-  const ATRIBUSI = '&copy; OpenStreetMap &copy; CARTO';
+  const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const ATRIBUSI = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
   let peta = null;          // instance Leaflet
   let tileLayer = null;
@@ -78,6 +77,7 @@
       #screen-peta { overflow: hidden !important; background: var(--bg); }
       #kkMapCanvas { position: absolute; inset: 0; z-index: 1; background: #E8E8EC; }
       html.kosku-dark #kkMapCanvas { background: #1b1b1f; }
+      html.kosku-dark #kkMapCanvas .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.92) saturate(.8); }
       #screen-peta .leaflet-control-attribution { font-size: 9px; background: rgba(255,255,255,.7); }
       html.kosku-dark #screen-peta .leaflet-control-attribution { background: rgba(0,0,0,.55); color: #aaa; }
       html.kosku-dark #screen-peta .leaflet-control-attribution a { color: #bbb; }
@@ -265,9 +265,8 @@
   function pasangTile() {
     if (!peta) return;
     if (tileLayer) peta.removeLayer(tileLayer);
-    tileLayer = L.tileLayer(gelap() ? TILE_GELAP : TILE_TERANG, {
-      subdomains: 'abcd', maxZoom: 19, attribution: ATRIBUSI
-    }).addTo(peta);
+    // Mode gelap dibuat lewat filter CSS pada ubin (lihat #kkMapCanvas di gaya)
+    tileLayer = L.tileLayer(TILE_URL, { maxZoom: 19, attribution: ATRIBUSI }).addTo(peta);
   }
 
   async function mulaiPeta() {
@@ -292,7 +291,6 @@
       tampilTombolArea(true);
     });
     peta.on('click', () => { /* ketuk peta kosong: tidak melakukan apa-apa */ });
-    new MutationObserver(pasangTile).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   }
 
   let programGerak = false;
