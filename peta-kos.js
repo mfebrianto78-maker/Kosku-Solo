@@ -165,6 +165,30 @@
       .kkm-me { width: 18px; height: 18px; border-radius: 50%; background: #2563EB; border: 3px solid #fff;
         box-shadow: 0 0 0 8px rgba(37,99,235,.22); }
 
+
+      /* Kartu besar "Peta" di Beranda */
+      #kkmPetaCard { position: relative; overflow: hidden; margin: 14px 18px 4px; padding: 18px 16px; border-radius: 24px;
+        background: linear-gradient(135deg, #FF9A1F 0%, #FF6A00 100%); color: #fff; cursor: pointer;
+        box-shadow: 0 10px 26px rgba(255,106,0,.38); display: flex; align-items: center; gap: 14px; min-height: 112px; }
+      #kkmPetaCard:active { transform: scale(.985); }
+      #kkmPetaCard .kkmc-bg { position: absolute; right: 0; top: 0; height: 100%; width: 62%; }
+      #kkmPetaCard .kkmc-pins { position: absolute; right: 0; top: 0; height: 100%; width: 62%; }
+      #kkmPetaCard .kkmc-pins i { position: absolute; width: 20px; height: 20px; background: var(--c); border: 3px solid #fff;
+        border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 3px 8px rgba(0,0,0,.28); animation: kkmcBob 2.4s ease-in-out infinite; }
+      #kkmPetaCard .kkmc-pins i:nth-child(2) { animation-delay: .5s; }
+      #kkmPetaCard .kkmc-pins i:nth-child(3) { animation-delay: 1s; }
+      @keyframes kkmcBob { 0%,100% { margin-top: 0; } 50% { margin-top: -5px; } }
+      #kkmPetaCard .kkmc-ico { position: relative; z-index: 1; flex: none; width: 58px; height: 58px; border-radius: 18px;
+        background: rgba(255,255,255,.96); color: #FF6A00; display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+      #kkmPetaCard .kkmc-ico svg { width: 32px; height: 32px; }
+      #kkmPetaCard .kkmc-txt { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; max-width: 58%; }
+      #kkmPetaCard .kkmc-txt b { font: 800 17px 'Plus Jakarta Sans', sans-serif; line-height: 1.2; text-shadow: 0 1px 6px rgba(0,0,0,.18); }
+      #kkmPetaCard .kkmc-txt span { font: 600 11.5px 'Plus Jakarta Sans', sans-serif; line-height: 1.35; opacity: .95; }
+      #kkmPetaCard .kkmc-txt em { font-style: normal; align-self: flex-start; margin-top: 7px; background: #fff; color: #FF6A00;
+        font: 800 12.5px 'Plus Jakarta Sans', sans-serif; padding: 7px 14px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+      #kkmPetaCard .kkmc-txt u { text-decoration: none; }
+
       /* Tombol peta di kartu kos & di header */
       .kk-photo .kk-mapbtn { position: absolute; top: 10px; right: 52px; z-index: 2; width: 32px; height: 32px;
         background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;
@@ -183,6 +207,7 @@
     cari: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
     lokasi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg>',
     daftar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>',
+    petaBesar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6.5v13L9 17l6 3 6-2.5v-13L15 7 9 4z"/><path d="M9 4v13M15 7v13"/></svg>',
     pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg>'
   };
 
@@ -581,14 +606,31 @@
     pasangCss();
     const lihatSemua = [...document.querySelectorAll('#screen-dashboard div[onclick="showSearch()"]')].find(d => /Lihat Semua/.test(d.textContent));
     const rowTitle = [...document.querySelectorAll('#screen-dashboard div')].find(d => d.textContent.trim() === 'Rekomendasi Kos' && !d.children.length);
-    if (rowTitle && rowTitle.parentElement && !document.getElementById('kkmEntryDash')) {
-      const b = document.createElement('button');
-      b.id = 'kkmEntryDash'; b.className = 'kkm-entry'; b.type = 'button';
-      b.innerHTML = IKON.pin + 'Peta';
-      b.style.marginLeft = 'auto'; b.style.marginRight = '12px';
-      b.addEventListener('click', () => bukaPeta(null));
-      const aksi = lihatSemua && lihatSemua.parentElement === rowTitle.parentElement ? lihatSemua : null;
-      if (aksi) rowTitle.parentElement.insertBefore(b, aksi); else rowTitle.parentElement.appendChild(b);
+    if (rowTitle && rowTitle.parentElement && !document.getElementById('kkmPetaCard')) {
+      const c = document.createElement('div');
+      c.id = 'kkmPetaCard';
+      c.setAttribute('role', 'button');
+      c.innerHTML = `
+        <svg class="kkmc-bg" viewBox="0 0 200 120" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
+          <rect width="200" height="120" fill="#FFB25A" opacity=".35"/>
+          <path d="M-10 90 L70 60 L130 80 L210 30" stroke="#fff" stroke-width="7" fill="none" opacity=".55" stroke-linecap="round"/>
+          <path d="M40 130 L80 40 L100 -10" stroke="#fff" stroke-width="5" fill="none" opacity=".45" stroke-linecap="round"/>
+          <path d="M120 130 L150 70 L210 70" stroke="#fff" stroke-width="5" fill="none" opacity=".4" stroke-linecap="round"/>
+          <path d="M150 -10 C140 20 170 40 160 70" stroke="#7CC4FF" stroke-width="6" fill="none" opacity=".6" stroke-linecap="round"/>
+        </svg>
+        <div class="kkmc-pins" aria-hidden="true">
+          <i style="left:46%;top:46%;--c:#3B82F6"></i>
+          <i style="left:70%;top:30%;--c:#EC4899"></i>
+          <i style="left:82%;top:62%;--c:#8B5CF6"></i>
+        </div>
+        <div class="kkmc-ico">${IKON.petaBesar}</div>
+        <div class="kkmc-txt">
+          <b>Jelajahi Kos di Peta</b>
+          <span>Temukan kos terdekat dari kampus & tempat kerjamu</span>
+          <em>Buka Peta <u>→</u></em>
+        </div>`;
+      c.addEventListener('click', () => bukaPeta(null));
+      rowTitle.parentElement.parentElement.insertBefore(c, rowTitle.parentElement);
     }
     const judul = document.querySelector('#screen-search .search-header h2');
     if (judul && judul.parentElement && !document.getElementById('kkmEntrySearch')) {
