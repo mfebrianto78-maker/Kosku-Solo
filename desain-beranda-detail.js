@@ -21,7 +21,7 @@
 
     /* Rekomendasi: geser ke samping */
     #dashboardKosGrid {
-      flex-direction: row !important; overflow-x: auto; gap: 14px; scroll-snap-type: x mandatory;
+      flex-direction: row !important; overflow-x: auto; gap: 14px; scroll-snap-type: x proximity; scroll-padding-left: 18px; touch-action: pan-x pan-y; overscroll-behavior-x: contain;
       -webkit-overflow-scrolling: touch; padding-bottom: 12px !important;
     }
     #dashboardKosGrid::-webkit-scrollbar { display: none; }

@@ -19,14 +19,28 @@
     #app { min-height: 0; height: 100vh; height: 100dvh; }
     .screen { overscroll-behavior: contain; }
 
-    /* Menu bawah: menempel di dasar layar */
+    /* Menu bawah: kartu melayang berbingkai di dasar layar */
     .bottom-nav {
-      position: fixed !important; left: 0; right: 0; bottom: 0; margin: 0 auto;
-      width: 100%; max-width: 430px; z-index: 100;
-      padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+      position: fixed !important; left: 0; right: 0;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      margin: 0 auto; z-index: 100;
+      width: calc(100% - 28px); max-width: 402px;
+      padding: 6px; gap: 2px;
+      background: var(--card, #fff) !important;
+      border: 1px solid var(--border, #EEE) !important;
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(20,20,40,0.16), 0 2px 6px rgba(20,20,40,0.06);
     }
+    .bottom-nav .nav-item {
+      padding: 7px 0 6px; gap: 3px; border-radius: 18px;
+      transition: background .2s;
+    }
+    .bottom-nav .nav-item.active { background: var(--orange-light, #FFF0E0); }
+    .bottom-nav .nav-item.active .nav-label { font-weight: 800; }
+    html.kosku-dark .bottom-nav .nav-item.active { background: rgba(255,122,0,0.16); }
+    html.kosku-dark .bottom-nav { box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     /* Sisakan ruang agar isi halaman tidak tertutup menu */
-    .screen:has(> .bottom-nav) { padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px)); }
+    .screen:has(> .bottom-nav) { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
   `;
   if (document.getElementById('koskuLayoutStabil')) return;
   const s = document.createElement('style');
