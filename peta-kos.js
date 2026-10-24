@@ -311,6 +311,7 @@
         })
       : L.layerGroup();
     lapisPin.addTo(peta);
+    try { document.dispatchEvent(new CustomEvent('kk:peta-siap', { detail: { map: peta } })); } catch (e) { /* abaikan */ }
     peta.on('dragend zoomend', () => {
       if (programGerak) return;
       tampilTombolArea(true);
@@ -350,7 +351,7 @@
     const cek = k.lokasi_terverifikasi ? ' ✓' : '';
     return L.divIcon({
       className: 'kkm-pinwrap', iconSize: [0, 0], iconAnchor: [0, 0],
-      html: `<div class="kkm-pin${on ? ' on' : ''}" style="--c:${c}">${hargaSingkat(k.harga_per_bulan)}${cek}</div>`
+      html: `<div class="kkm-pin${on ? ' on' : ''}" style="--c:${c}">${hargaSingkat(k.harga_per_bulan)}${cek}${hookEkstra('ekstraPin', k)}</div>`
     });
   }
 
@@ -369,7 +370,14 @@
     });
   }
 
+  function hookEkstra(nama, k) {
+    try { return (window.KKPeta && window.KKPeta[nama]) ? (window.KKPeta[nama](k) || '') : ''; } catch (e) { return ''; }
+  }
   function urutkan(list) {
+    try {
+      const h = window.KKPeta && window.KKPeta.urutan && window.KKPeta.urutan(list);
+      if (h) return h;
+    } catch (e) { /* abaikan */ }
     if (!posisiSaya) return list;
     return list.slice().sort((a, b) =>
       jarakM(posisiSaya.lat, posisiSaya.lng, Number(a.latitude), Number(a.longitude)) -
@@ -394,6 +402,7 @@
           <span class="kkm-tag" style="background:${WARNA[k.jenis_kos] || '#FF7A00'}">${esc(k.jenis_kos)}${k.lokasi_terverifikasi ? ' · Lokasi ✓' : ''}</span>
           <div class="kkm-nm">${esc(k.nama_kos)}</div>
           <div class="kkm-ad">${esc(k.alamat)}</div>
+          ${hookEkstra('ekstraKartu', k)}
           <div class="kkm-ft"><div class="kkm-pr">${hargaPenuh(k.harga_per_bulan)}<small>/bln</small></div>${jr ? `<div class="kkm-jr" title="Jarak lurus dari lokasimu">${jr}</div>` : ''}</div>
         </div></div>`;
     }).join('');
@@ -547,6 +556,17 @@
     }, 60);
   }
   window.showPeta = function () { return bukaPeta(null); };
+  // API untuk modul lain (tempat-favorit.js)
+  window.KKPeta = Object.assign(window.KKPeta || {}, {
+    peta: () => peta,
+    kos: () => dataTampil,
+    posisi: () => posisiSaya,
+    segarkan: () => segarkan(false),
+    pilihKos: id => pilih(id, { dariPin: true }),
+    catatan: t => catatan(t),
+    gerak: fn => { programGerak = true; try { fn(); } finally { setTimeout(() => { programGerak = false; }, 900); } },
+    jarakM: jarakM, fmtJarak: fmtJarak
+  });
   window.bukaPetaKos = function (id) { return bukaPeta(id); };
 
   // Pastikan peta menyesuaikan ukuran saat layar dibuka kembali (mis. dari Detail)
