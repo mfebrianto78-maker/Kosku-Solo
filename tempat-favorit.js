@@ -121,6 +121,20 @@
         display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; border: 0; }
       .kkm-note { top: calc(176px + env(safe-area-inset-top, 0px)) !important; }
 
+      /* Mode geser (khusus admin) */
+      .kkt-badge.drag .kkt-ic { outline: 3px dashed #FF7A00; outline-offset: 4px; transform: scale(1.25); background: #FF7A00; }
+      .kkt-geser { position: absolute; z-index: 600; left: 14px; right: 14px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        background: var(--card, #fff); border-radius: 22px; padding: 14px 14px 12px; box-shadow: 0 10px 30px rgba(20,20,40,.3);
+        border: 2px solid var(--orange, #FF7A00); }
+      .kkt-geser b { display: block; font: 800 14px 'Plus Jakarta Sans', sans-serif; color: var(--text, #222); }
+      .kkt-geser p { margin: 3px 0 0; font: 500 11.5px 'Plus Jakarta Sans', sans-serif; color: var(--text-3, #888); line-height: 1.4; }
+      .kkt-geser code { display: block; margin-top: 6px; font: 700 12px 'Plus Jakarta Sans', sans-serif; color: var(--orange, #FF7A00); }
+      .kkt-geser .kkt-gb { display: flex; gap: 10px; margin-top: 12px; }
+      .kkt-geser button { flex: 1; padding: 12px; border: 0; border-radius: 12px; font: 800 13.5px 'Plus Jakarta Sans', sans-serif; cursor: pointer; background: var(--bg-2, #F1F2F4); color: var(--text, #222); }
+      .kkt-geser button.ok { background: var(--orange, #FF7A00); color: #fff; }
+      #screen-peta.kkt-geser-on .kkm-cards, #screen-peta.kkt-geser-on .kkm-area, #screen-peta.kkt-geser-on .kkm-fabs, #screen-peta.kkt-geser-on .kkt-info { display: none !important; }
+      #screen-peta.kkt-geser-on .leaflet-bottom { margin-bottom: 150px; }
+
       /* Jarak di pin & kartu kos */
       .kkm-pin small { display: block; font: 700 10px 'Plus Jakarta Sans', sans-serif; opacity: .92; line-height: 1.15; margin-top: 1px; text-align: center; }
       .kkt-jr { display: flex; align-items: center; gap: 5px; font: 700 11px 'Plus Jakarta Sans', sans-serif; color: var(--c); }
@@ -218,10 +232,10 @@
     row.style.display = ada.length ? 'flex' : 'none';
   }
 
-  function ikonTempat(t) {
+  function ikonTempat(t, ekstra) {
     return L.divIcon({
       className: 'kkt-wrap', iconSize: [0, 0], iconAnchor: [0, 0],
-      html: `<div class="kkt-badge${t.id === aktifId ? ' on' : ''}" style="--c:${WARNA[t.kategori] || '#475569'}"><div class="kkt-ic">${ikon(t.kategori)}</div><div class="kkt-lab">${esc(t.nama_singkat)}</div></div>`
+      html: `<div class="kkt-badge${t.id === aktifId ? ' on' : ''}${ekstra ? ' ' + ekstra : ''}" style="--c:${WARNA[t.kategori] || '#475569'}"><div class="kkt-ic">${ikon(t.kategori)}</div><div class="kkt-lab">${esc(t.nama_singkat)}</div></div>`
     });
   }
 
@@ -229,10 +243,11 @@
     if (!peta || !window.L) return;
     if (!lapis) lapis = L.layerGroup().addTo(peta);
     lapis.clearLayers();
-    tempat.filter(t => katOn.has(t.kategori)).forEach(t => {
+    tempat.filter(t => katOn.has(t.kategori) && !(geser && geser.id === t.id)).forEach(t => {
       const m = L.marker([t.latitude, t.longitude], { icon: ikonTempat(t), zIndexOffset: 500, keyboard: false, riseOnHover: true });
-      m.on('click', () => pilihTempat(t.id));
+      m.on('click', () => { if (Date.now() < blokirKlikSampai) return; pilihTempat(t.id); });
       lapis.addLayer(m);
+      if (adalahAdmin()) pasangTekanLama(m, t.id);
     });
   }
 
@@ -261,6 +276,7 @@
   }
 
   function pilihTempat(id) {
+    if (geser) return;
     if (aktifId === id) { bersihkanPilihan(false); return; }
     aktifId = id;
     const t = aktif(); if (!t || !peta) return;
@@ -292,6 +308,120 @@
     if (!tanpaSegar && window.KKPeta) window.KKPeta.segarkan();
   }
 
+
+  // ---------- Geser posisi tempat (khusus admin) ----------
+  let geser = null;            // { id, lat, lng, marker }
+  let blokirKlikSampai = 0;
+  let petunjukDitampilkan = false;
+
+  function adalahAdmin() {
+    try { return !!(currentUserProfile && currentUserProfile.is_admin === true); } catch (e) { return false; }
+  }
+
+  function pasangTekanLama(marker, id) {
+    const el = marker.getElement && marker.getElement();
+    if (!el || el.__kktLp) return;
+    el.__kktLp = true;
+    let timer = null, x0 = 0, y0 = 0;
+    const batal = () => { clearTimeout(timer); timer = null; };
+    const mulaiT = e => {
+      const pt = e.touches ? e.touches[0] : e;
+      x0 = pt.clientX; y0 = pt.clientY;
+      batal();
+      timer = setTimeout(() => {
+        timer = null;
+        blokirKlikSampai = Date.now() + 600;
+        try { if (navigator.vibrate) navigator.vibrate(30); } catch (x) { /* abaikan */ }
+        mulaiGeser(id);
+      }, 650);
+    };
+    const gerakT = e => {
+      const pt = e.touches ? e.touches[0] : e;
+      if (Math.abs(pt.clientX - x0) > 10 || Math.abs(pt.clientY - y0) > 10) batal();
+    };
+    el.addEventListener('touchstart', mulaiT, { passive: true });
+    el.addEventListener('touchmove', gerakT, { passive: true });
+    el.addEventListener('touchend', batal); el.addEventListener('touchcancel', batal);
+    el.addEventListener('mousedown', mulaiT); el.addEventListener('mousemove', gerakT);
+    el.addEventListener('mouseup', batal); el.addEventListener('mouseleave', batal);
+    el.addEventListener('contextmenu', e => e.preventDefault());
+  }
+
+  function teksKoordinat() { return geser ? geser.lat.toFixed(6) + ', ' + geser.lng.toFixed(6) : ''; }
+
+  function mulaiGeser(id) {
+    if (!adalahAdmin() || !peta || geser) return;
+    const t = tempat.find(x => x.id === id); if (!t) return;
+    if (aktifId) bersihkanPilihan(true);
+    geser = { id, lat: t.latitude, lng: t.longitude, asalLat: t.latitude, asalLng: t.longitude, marker: null };
+    const layar = document.getElementById('screen-peta');
+    layar.classList.add('kkt-geser-on');
+    gambarTempat();
+    const m = L.marker([t.latitude, t.longitude], { icon: ikonTempat(t, 'drag'), draggable: true, zIndexOffset: 3000, keyboard: false }).addTo(peta);
+    m.on('drag', () => { const p = m.getLatLng(); geser.lat = p.lat; geser.lng = p.lng; const c = document.getElementById('kktGeserKoor'); if (c) c.textContent = teksKoordinat(); });
+    m.on('dragend', () => { const p = m.getLatLng(); geser.lat = p.lat; geser.lng = p.lng; const c = document.getElementById('kktGeserKoor'); if (c) c.textContent = teksKoordinat(); });
+    geser.marker = m;
+    const bar = document.createElement('div');
+    bar.id = 'kktGeser'; bar.className = 'kkt-geser';
+    bar.innerHTML = `<b>${esc(t.nama)}</b>
+      <p>Seret pin oranye ke posisi yang benar, atau ketuk di peta untuk memindahkannya. Perbesar peta supaya lebih tepat.</p>
+      <code id="kktGeserKoor">${teksKoordinat()}</code>
+      <div class="kkt-gb"><button type="button" id="kktGBatal">Batal</button><button type="button" class="ok" id="kktGSimpan">Simpan posisi</button></div>`;
+    layar.appendChild(bar);
+    bar.querySelector('#kktGBatal').addEventListener('click', () => akhiriGeser(false));
+    bar.querySelector('#kktGSimpan').addEventListener('click', simpanGeser);
+    peta.on('click', ketukPindah);
+    if (window.KKPeta && window.KKPeta.gerak) window.KKPeta.gerak(() => peta.setView([t.latitude, t.longitude], Math.max(peta.getZoom(), 16)));
+  }
+
+  function ketukPindah(e) {
+    if (!geser || !geser.marker || !e || !e.latlng) return;
+    geser.marker.setLatLng(e.latlng);
+    geser.lat = e.latlng.lat; geser.lng = e.latlng.lng;
+    const c = document.getElementById('kktGeserKoor'); if (c) c.textContent = teksKoordinat();
+  }
+
+  function akhiriGeser(tersimpan) {
+    if (!geser) return;
+    try { peta.off('click', ketukPindah); } catch (e) { /* abaikan */ }
+    try { if (geser.marker) peta.removeLayer(geser.marker); } catch (e) { /* abaikan */ }
+    const bar = document.getElementById('kktGeser'); if (bar) bar.remove();
+    const layar = document.getElementById('screen-peta'); if (layar) layar.classList.remove('kkt-geser-on');
+    geser = null;
+    gambarTempat();
+  }
+
+  async function simpanGeser() {
+    if (!geser) return;
+    const { id, lat, lng } = geser;
+    if (lat < -8.30 || lat > -7.10 || lng < 110.30 || lng > 111.40) {
+      if (window.KKPeta) window.KKPeta.catatan('Titik harus berada di wilayah Soloraya.');
+      return;
+    }
+    const btn = document.getElementById('kktGSimpan');
+    if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan…'; }
+    try {
+      const { data, error } = await sbClient.from('tempat_favorit')
+        .update({ latitude: lat, longitude: lng }).eq('id', id).select('id');
+      if (error) throw error;
+      if (!data || !data.length) throw new Error('Kamu tidak punya izin mengubah tempat ini.');
+      const t = tempat.find(x => x.id === id);
+      if (t) { t.latitude = lat; t.longitude = lng; }
+      dimuatPada = 0;
+      akhiriGeser(true);
+      if (window.KKPeta) window.KKPeta.catatan('Posisi tersimpan.');
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Simpan posisi'; }
+      if (window.KKPeta) window.KKPeta.catatan('Gagal menyimpan: ' + (e.message || e));
+    }
+  }
+
+  function petunjukAdmin() {
+    if (petunjukDitampilkan || !adalahAdmin() || !tempat.length) return;
+    petunjukDitampilkan = true;
+    if (window.KKPeta) window.KKPeta.catatan('Admin: tekan lama lencana tempat untuk menggeser posisinya.');
+  }
+
   // Kait ke peta-kos.js
   function pasangKait() {
     window.KKPeta = Object.assign(window.KKPeta || {}, {
@@ -320,6 +450,7 @@
     bangunBarisChip();
     gambarTempat();
     aturZoomKelas();
+    petunjukAdmin();
     if (!peta.__kktZoom) { peta.__kktZoom = true; peta.on('zoomend', aturZoomKelas); }
   }
 
@@ -331,7 +462,7 @@
     window.show = function (id) {
       const r = asliShow.apply(this, arguments);
       if (id === 'peta' && window.KKPeta && window.KKPeta.peta()) {
-        muatTempat(false).then(() => { bangunBarisChip(); gambarTempat(); });
+        muatTempat(false).then(() => { bangunBarisChip(); gambarTempat(); petunjukAdmin(); });
       }
       return r;
     };
@@ -451,6 +582,7 @@
           <div style="font-size:11.5px;color:#6B7280">${adminData.length} tempat · ${adminData.filter(t => t.aktif).length} aktif</div></div>
         <button class="kkta-add" onclick="kktBukaForm(null)">+ Tambah</button>
       </div>
+      <button class="kkta-add" style="width:100%;margin-bottom:12px;background:#1F2937" onclick="kktAturDiPeta()">🗺️ Atur posisi langsung di peta</button>
       <div class="kkta-bar"><input id="kktaCari" type="search" placeholder="Cari nama tempat" value="${esc(adminCari)}"></div>
       <div class="kkta-chips">
         ${['Semua'].concat(KATEGORI).map(k => `<button class="${adminKat === k ? 'on' : ''}" data-k="${esc(k)}">${esc(k === 'Semua' ? 'Semua' : namaKat(k))}</button>`).join('')}
@@ -486,10 +618,13 @@
     alert(t);
   }
 
+  window.kktAturDiPeta = function () { if (typeof window.showPeta === 'function') window.showPeta(); };
+
   window.kktToggle = async function (id) {
     const t = adminData.find(x => x.id === id); if (!t) return;
-    const { error } = await sbClient.from('tempat_favorit').update({ aktif: !t.aktif }).eq('id', id);
+    const { data, error } = await sbClient.from('tempat_favorit').update({ aktif: !t.aktif }).eq('id', id).select('id');
     if (error) { toastAdmin('Gagal: ' + error.message); return; }
+    if (!data || !data.length) { toastAdmin('Gagal: tidak ada izin mengubah tempat ini.'); return; }
     dimuatPada = 0;
     await muatPanelAdmin();
   };
@@ -497,8 +632,9 @@
   window.kktHapus = async function (id) {
     const t = adminData.find(x => x.id === id); if (!t) return;
     if (!confirm('Hapus "' + t.nama + '" secara permanen?\nKalau hanya ingin menyembunyikan, pakai Nonaktifkan.')) return;
-    const { error } = await sbClient.from('tempat_favorit').delete().eq('id', id);
+    const { data, error } = await sbClient.from('tempat_favorit').delete().eq('id', id).select('id');
     if (error) { toastAdmin('Gagal menghapus: ' + error.message); return; }
+    if (!data || !data.length) { toastAdmin('Gagal: tidak ada izin menghapus tempat ini.'); return; }
     dimuatPada = 0;
     await muatPanelAdmin();
   };
@@ -605,10 +741,11 @@
     };
     const btn = document.getElementById('kktSimpan');
     btn.disabled = true; btn.textContent = 'Menyimpan…';
-    const q = id ? sbClient.from('tempat_favorit').update(payload).eq('id', id) : sbClient.from('tempat_favorit').insert(payload);
-    const { error } = await q;
+    const q = id ? sbClient.from('tempat_favorit').update(payload).eq('id', id).select('id') : sbClient.from('tempat_favorit').insert(payload);
+    const { data: hasil, error } = await q;
     btn.disabled = false; btn.textContent = 'Simpan';
     if (error) return tampilErr('Gagal menyimpan: ' + error.message);
+    if (id && (!hasil || !hasil.length)) return tampilErr('Gagal menyimpan: tidak ada izin mengubah tempat ini.');
     tutupForm();
     dimuatPada = 0;
     await muatPanelAdmin();
