@@ -21,7 +21,7 @@
   const num = v => Number(v) || 0;
   const tgl = k => { const t = Date.parse(k.created_at); return isNaN(t) ? 0 : t; };
 
-  function sortData(list) {
+  function sortData0(list) {
     const a = list.slice();
     switch (urutan) {
       case 'termurah': return a.sort((x, y) => num(x.harga_per_bulan) - num(y.harga_per_bulan));
@@ -30,6 +30,13 @@
       case 'populer':  return a.sort((x, y) => num(y.jumlah_booking) - num(x.jumlah_booking));
       default:         return a.sort((x, y) => tgl(y) - tgl(x));
     }
+  }
+
+  // Kos unggulan (promosi admin) selalu di depan, kecuali saat diurutkan menurut harga
+  function sortData(list) {
+    const h = sortData0(list);
+    if (urutan === 'termurah' || urutan === 'termahal' || !window.KKPromo) return h;
+    try { return window.KKPromo.utamakan(h); } catch (e) { return h; }
   }
 
   // Bungkus fungsi render bawaan: urutkan data dulu, lalu render seperti biasa
