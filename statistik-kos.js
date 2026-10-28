@@ -227,7 +227,7 @@
     const kartu = document.createElement('div');
     kartu.className = 'owner-menu-card';
     kartu.id = 'kksMenu';
-    kartu.innerHTML = '<div class="owner-menu-icon">📈</div><div class="owner-menu-label">Statistik Kos</div><div class="owner-menu-badge" style="color:var(--orange)">Lihat grafik</div>';
+    kartu.innerHTML = '<div class="owner-menu-icon" style="width:54px;height:54px;border-radius:16px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;background:var(--orange-light);color:var(--orange);font-size:0"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></div><div class="owner-menu-label">Statistik Kos</div><div class="owner-menu-badge" style="color:var(--orange)">Lihat grafik</div>';
     kartu.addEventListener('click', () => window.showStatistik());
     // Taruh setelah kartu Keuangan bila ada
     const keu = Array.from(grid.children).find(c => /Keuangan/.test(c.textContent));
