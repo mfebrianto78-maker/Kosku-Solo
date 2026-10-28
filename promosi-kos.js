@@ -40,6 +40,7 @@
     urutAcak = {};
     Array.from(ids).sort(() => Math.random() - 0.5).forEach((id, i) => { urutAcak[id] = i; });
     try { (allKosData || []).forEach(k => { k.unggulan = ids.has(k.id); }); } catch (e) { /* abaikan */ }
+    try { if (typeof segarkanPeta === 'function') segarkanPeta(); } catch (e) { /* abaikan */ }
   }
 
   // Taruh kos unggulan di depan, sisanya mengikuti urutan semula
@@ -94,6 +95,28 @@
   })();
 
   window.KKPromo = { utamakan, aktif: () => aktifIds };
+
+  // ---- Pin Unggulan di peta (memakai kaitan KKPeta dari peta-kos.js) ----
+  const BINTANG_PIN = '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+  const cssPeta = document.createElement('style');
+  cssPeta.textContent = `
+  .kkm-pinwrap.kkp-pin .kkm-pin{background:linear-gradient(135deg,#FCD34D,#F59E0B);color:#4A2E00;border-color:#fff;
+    box-shadow:0 0 0 3px rgba(245,158,11,.38),0 4px 12px rgba(0,0,0,.3);padding-right:14px}
+  .kkm-pinwrap.kkp-pin .kkm-pin::after{background:#F59E0B}
+  .kkm-pinwrap.kkp-pin .kkm-pin.on{background:#fff;color:#B45309;border-color:#F59E0B}
+  .kkm-pinwrap.kkp-pin .kkm-pin.on::after{background:#fff;border-color:#F59E0B}
+  .kkp-bt{position:absolute;right:-9px;top:-10px;width:20px;height:20px;border-radius:50%;background:#F59E0B;color:#fff;
+    border:2px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+  .kkp-kartu{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#FBBF24,#F59E0B);color:#5B3A00;
+    font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:7px;margin:2px 0 4px}`;
+  document.head.appendChild(cssPeta);
+  window.KKPeta = Object.assign(window.KKPeta || {}, {
+    kelasPin: k => (k && aktifIds.has(k.id)) ? 'kkp-pin' : '',
+    zPin: k => (k && aktifIds.has(k.id)) ? 1000 : 0,
+    ekstraPinPromo: k => (k && aktifIds.has(k.id)) ? `<span class="kkp-bt">${BINTANG_PIN}</span>` : '',
+    ekstraKartuPromo: k => (k && aktifIds.has(k.id)) ? `<div class="kkp-kartu">${BINTANG_PIN}Unggulan</div>` : ''
+  });
+  function segarkanPeta() { try { if (window.KKPeta && window.KKPeta.segarkan) window.KKPeta.segarkan(); } catch (e) { /* abaikan */ } }
 
   const css = document.createElement('style');
   css.textContent = `

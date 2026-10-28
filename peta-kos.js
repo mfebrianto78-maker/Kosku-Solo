@@ -350,7 +350,7 @@
     const c = WARNA[k.jenis_kos] || '#FF7A00';
     const cek = k.lokasi_terverifikasi ? ' ✓' : '';
     return L.divIcon({
-      className: 'kkm-pinwrap', iconSize: [0, 0], iconAnchor: [0, 0],
+      className: 'kkm-pinwrap' + (hookEkstra('kelasPin', k) ? ' ' + hookEkstra('kelasPin', k) : ''), iconSize: [0, 0], iconAnchor: [0, 0],
       html: `<div class="kkm-pin${on ? ' on' : ''}" style="--c:${c}">${hargaSingkat(k.harga_per_bulan)}${cek}${hookEkstra('ekstraPin', k)}</div>`
     });
   }
@@ -361,7 +361,8 @@
     pinById = {};
     dataTampil.forEach(k => {
       const m = L.marker([Number(k.latitude), Number(k.longitude)], {
-        icon: ikonPin(k, k.id === aktifId), riseOnHover: true, keyboard: false
+        icon: ikonPin(k, k.id === aktifId), riseOnHover: true, keyboard: false,
+        zIndexOffset: Number(hookEkstra('zPin', k)) || 0
       });
       m.on('click', () => pilih(k.id, { dariPin: true }));
       m._kosId = k.id;
@@ -371,7 +372,10 @@
   }
 
   function hookEkstra(nama, k) {
-    try { return (window.KKPeta && window.KKPeta[nama]) ? (window.KKPeta[nama](k) || '') : ''; } catch (e) { return ''; }
+    let h = '';
+    try { if (window.KKPeta && window.KKPeta[nama]) h += (window.KKPeta[nama](k) || ''); } catch (e) { /* abaikan */ }
+    try { if (window.KKPeta && window.KKPeta[nama + 'Promo']) h += (window.KKPeta[nama + 'Promo'](k) || ''); } catch (e) { /* abaikan */ }
+    return h;
   }
   function urutkan(list) {
     try {

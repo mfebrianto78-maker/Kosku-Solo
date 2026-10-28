@@ -78,7 +78,7 @@
     s.innerHTML = `
       <div class="kkq-head">
         <div class="kkq-top"><div class="kkq-back" id="kkqBack">←</div><h2>⭐ Promosi Kos</h2></div>
-        <p>Jadikan kos Anda <b>Unggulan</b>: tampil di urutan teratas Beranda dan hasil pencarian dengan label ⭐ Unggulan.</p>
+        <p>Jadikan kos Anda <b>Unggulan</b>: tampil di urutan teratas Beranda dan hasil pencarian dengan label Unggulan.</p>
       </div>
       <div class="kkq-body" id="kkqIsi"></div>`;
     induk.appendChild(s);
@@ -285,7 +285,7 @@
       k.addEventListener('click', () => window.showPromosiSaya());
       const judulMenu = grid.previousElementSibling;
       (judulMenu || grid).parentNode.insertBefore(k, judulMenu || grid);
-      isiKartu('Promosikan Kos Anda', 'Tampil di urutan teratas Beranda &amp; hasil pencarian dengan label ⭐ Unggulan.', 'Ajukan Promosi');
+      isiKartu('Promosikan Kos Anda', 'Tampil di urutan teratas Beranda &amp; hasil pencarian dengan label Unggulan.', 'Ajukan Promosi');
     }
     return k;
   }
@@ -311,7 +311,7 @@
         isiKartu('Pengajuan sedang diproses', `${tunggu.length} pengajuan menunggu persetujuan admin. Anda akan dapat notifikasi saat ada keputusan.`, 'Lihat Status');
       } else {
         const tolak = (c.data || []).find(p => p.status === 'ditolak' && now - Date.parse(p.created_at) < 14 * HARI);
-        isiKartu('Promosikan Kos Anda', tolak ? 'Pengajuan terakhir belum disetujui. Anda bisa mengajukan lagi kapan saja.' : 'Tampil di urutan teratas Beranda &amp; hasil pencarian dengan label ⭐ Unggulan.', 'Ajukan Promosi');
+        isiKartu('Promosikan Kos Anda', tolak ? 'Pengajuan terakhir belum disetujui. Anda bisa mengajukan lagi kapan saja.' : 'Tampil di urutan teratas Beranda &amp; hasil pencarian dengan label Unggulan.', 'Ajukan Promosi');
       }
     } catch (e) { /* biarkan ajakan bawaan */ }
   }
