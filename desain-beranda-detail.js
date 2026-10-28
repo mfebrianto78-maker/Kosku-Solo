@@ -10,13 +10,23 @@
 
   const css = `
     /* ================= BERANDA ================= */
+    /* ---- Lokasi Populer: kartu pil ---- */
+    #dashShortcutWrap { display:flex !important; gap:10px !important; overflow-x:auto !important; padding:2px 2px 10px !important; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+    #dashShortcutWrap::-webkit-scrollbar { display:none; }
+    .kk-lokasi { flex:none; display:flex; align-items:center; gap:10px; padding:9px 16px 9px 9px; border-radius:20px; background:var(--card); border:1.5px solid var(--border); box-shadow:0 3px 10px rgba(0,0,0,.05); cursor:pointer; transition:transform .15s, box-shadow .15s; }
+    .kk-lokasi:active { transform:scale(.96); box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    .kk-lokasi .lg { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:11.5px; letter-spacing:.2px; flex:none; }
+    .kk-lokasi .tx b { display:block; font-size:13.5px; font-weight:800; color:var(--text); line-height:1.2; white-space:nowrap; }
+    .kk-lokasi .tx span { display:block; font-size:11px; color:var(--text-3); margin-top:2px; white-space:nowrap; }
+    .kk-lokasi .tx span.ada { color:var(--orange); font-weight:700; }
+
     #screen-dashboard > div:first-child { border-radius: 0 0 28px 28px; padding-bottom: 24px !important; }
     #screen-dashboard .kk-sec { background: transparent !important; border: none !important; margin: 0 !important; padding: 18px 18px 4px !important; }
     #screen-dashboard .kk-sec-title { font-size: 16px !important; font-weight: 800 !important; color: var(--text) !important; letter-spacing: 0 !important; margin-bottom: 12px !important; text-transform: none; }
     #screen-dashboard .kk-chips { background: transparent !important; margin: 0 !important; padding: 14px 18px 4px !important; }
     #screen-dashboard .category-scroll { margin-bottom: 0; padding-bottom: 4px; }
     #screen-dashboard .cat-chip { padding: 9px 16px; font-size: 12.5px; background: var(--card); }
-    #screen-dashboard .cat-chip.active { box-shadow: 0 4px 12px rgba(255,122,0,0.35); }
+    #screen-dashboard .cat-chip.active { background: var(--orange); color: #fff; border-color: var(--orange); box-shadow: 0 4px 12px rgba(255,122,0,0.35); }
     #screen-dashboard .banner-carousel { box-shadow: 0 6px 18px rgba(20,20,40,0.12); }
 
     /* Rekomendasi: geser ke samping */
@@ -116,6 +126,58 @@
     return h < 11 ? 'Selamat pagi' : h < 15 ? 'Selamat siang' : h < 18 ? 'Selamat sore' : 'Selamat malam';
   }
 
+
+  // ---------- Lokasi Populer: kartu pil (logo/inisial + nama + jumlah kos) ----------
+  const LOKASI = [
+    { label: 'UNS', value: 'UNS', warna: ['#3B82F6', '#1D4ED8'], kode: 'UNS' },
+    { label: 'UMS', value: 'UMS', warna: ['#EF4444', '#B91C1C'], kode: 'UMS' },
+    { label: 'UIN', value: 'UIN Surakarta', warna: ['#22C55E', '#15803D'], kode: 'UIN' },
+    { label: 'UTP', value: 'UTP', warna: ['#14B8A6', '#0F766E'], kode: 'UTP' },
+    { label: 'Kartosuro', value: 'Kartosuro' },
+    { label: 'Jebres', value: 'Jebres' },
+    { label: 'Banjarsari', value: 'Banjarsari' },
+    { label: 'Solobaru', value: 'Solobaru' }
+  ];
+  const PIN = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+
+  function hitungKos(nilai) {
+    let data = [];
+    try { data = allKosData || []; } catch (e) { /* belum dimuat */ }
+    const q = nilai.toLowerCase();
+    return data.filter(k => ((k.alamat || '').toLowerCase().includes(q)) || ((k.deskripsi || '').toLowerCase().includes(q))).length;
+  }
+
+  function bangunLokasi() {
+    const wrap = document.getElementById('dashShortcutWrap');
+    if (!wrap) return;
+    wrap.dataset.ready = '1';
+    wrap.innerHTML = LOKASI.map(it => {
+      const n = hitungKos(it.value);
+      const bg = it.warna ? `linear-gradient(135deg,${it.warna[0]},${it.warna[1]})` : 'linear-gradient(135deg,#FF9A3D,#FF7A00)';
+      const isi = it.kode ? esc(it.kode) : PIN;
+      return `<div class="kk-lokasi" data-v="${esc(it.value)}">
+        <div class="lg" style="background:${bg}">${isi}</div>
+        <div class="tx"><b>${esc(it.label)}</b><span class="${n ? 'ada' : ''}">${n ? n + ' kos' : 'Segera hadir'}</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  document.addEventListener('click', e => {
+    const k = e.target.closest && e.target.closest('.kk-lokasi');
+    if (!k) return;
+    if (typeof window.gotoAreaSearch === 'function') window.gotoAreaSearch(k.dataset.v);
+  });
+
+  // Hitung ulang jumlah kos setelah data selesai dimuat
+  const asliLoadKos = window.loadKosData;
+  if (typeof asliLoadKos === 'function') {
+    window.loadKosData = async function () {
+      const r = await asliLoadKos.apply(this, arguments);
+      try { bangunLokasi(); } catch (e) { /* abaikan */ }
+      return r;
+    };
+  }
+
   function percantikBeranda() {
     const nama = document.getElementById('dashGreetName');
     if (nama && nama.previousElementSibling) nama.previousElementSibling.textContent = sapaan();
@@ -127,6 +189,7 @@
       const t = sec.firstElementChild;
       if (t && t !== shortcutWrap) { t.classList.add('kk-sec-title'); t.textContent = 'Lokasi Populer'; }
     }
+    bangunLokasi();
     const chips = document.querySelector('#screen-dashboard .category-scroll');
     if (chips && chips.parentElement) chips.parentElement.classList.add('kk-chips');
   }
