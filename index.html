@@ -99,12 +99,16 @@
   .onboard-slides { flex:1; overflow:hidden; position:relative; }
   .onboard-slide {
     position:absolute; top:0; left:0; width:100%; height:100%;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    padding:40px 32px; transition: transform 0.4s ease;
+    transition: transform 0.4s ease; background:#fff;
   }
-  .onboard-img { font-size: 100px; margin-bottom: 32px; }
-  .onboard-title { font-size: 26px; font-weight: 800; color: var(--text); text-align:center; margin-bottom:14px; }
-  .onboard-desc { font-size: 15px; color: var(--text-2); text-align:center; line-height:1.7; }
+  .onboard-slide img { width:100%; height:100%; object-fit:cover; object-position:top center; display:block; user-select:none; -webkit-user-drag:none; }
+  .onboard-slide::after { content:''; position:absolute; left:0; right:0; bottom:0; height:56px; background:linear-gradient(rgba(255,255,255,0), #fff); pointer-events:none; }
+  /* Halaman onboarding selalu terang (gambar dibuat untuk latar putih), juga di mode gelap */
+  #screen-onboarding, #screen-onboarding .onboard-dots, #screen-onboarding .onboard-btns { background:#fff !important; }
+  #screen-onboarding .dot { background:#E5E7EB; }
+  #screen-onboarding .dot.active { background:var(--orange); }
+  #screen-onboarding .btn-primary { border-radius:18px; box-shadow:0 6px 16px rgba(255,122,0,.28); display:flex; align-items:center; justify-content:center; gap:10px; }
+  #screen-onboarding .btn-outline { border-radius:18px; background:#fff !important; color:var(--orange) !important; border:1.5px solid var(--orange) !important; }
   .onboard-dots { display:flex; gap:8px; justify-content:center; padding: 16px; }
   .dot { width:8px; height:8px; border-radius:4px; background:var(--border); transition:all 0.3s; }
   .dot.active { width:24px; background:var(--orange); }
@@ -892,19 +896,13 @@ function installPWA() {
   <div id="screen-onboarding" class="screen">
     <div class="onboard-slides" id="onboardSlides">
       <div class="onboard-slide" id="slide-0">
-        <div class="onboard-img">🔍</div>
-        <div class="onboard-title">Cari Kos Terbaik di Solo</div>
-        <div class="onboard-desc">Temukan ribuan pilihan kos sesuai kebutuhan Anda, mulai dari kos putra, putri, hingga eksklusif.</div>
+        <img src="onboarding-1.webp" alt="Cari Kos Terbaik di Solo. Temukan pilihan kos sesuai kebutuhan Anda, mulai dari kos putra, putri, hingga eksklusif." decoding="async">
       </div>
       <div class="onboard-slide" id="slide-1" style="transform:translateX(100%)">
-        <div class="onboard-img">🗺️</div>
-        <div class="onboard-title">Lihat Lokasi Secara Akurat</div>
-        <div class="onboard-desc">Gunakan Google Maps dan Street View untuk melihat lokasi kos secara real dan detail.</div>
+        <img src="onboarding-2.webp" alt="Lihat Lokasi Secara Akurat. Gunakan Google Maps dan Street View untuk melihat lokasi kos secara real dan detail." decoding="async">
       </div>
       <div class="onboard-slide" id="slide-2" style="transform:translateX(200%)">
-        <div class="onboard-img">📱</div>
-        <div class="onboard-title">Booking Langsung dari Aplikasi</div>
-        <div class="onboard-desc">Pesan kamar dan lakukan pembayaran dengan aman hanya dalam beberapa langkah mudah.</div>
+        <img src="onboarding-3.webp" alt="Booking Langsung dari Aplikasi. Pesan kamar dan lakukan pembayaran dengan aman hanya dalam beberapa langkah mudah." decoding="async">
       </div>
     </div>
     <div class="onboard-dots" id="onboardDots">
@@ -913,7 +911,7 @@ function installPWA() {
       <div class="dot"></div>
     </div>
     <div class="onboard-btns">
-      <button class="btn-primary" id="onboardNextBtn" onclick="nextSlide()">Selanjutnya</button>
+      <button class="btn-primary" id="onboardNextBtn" onclick="nextSlide()">Selanjutnya <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
       <button class="btn-outline" onclick="showLogin()">Lewati</button>
     </div>
   </div>
@@ -5340,7 +5338,7 @@ function installPWA() {
       slides[onboardStep].style.transform = 'translateX(0)';
       dots.forEach((d,i) => d.classList.toggle('active', i === onboardStep));
       if (onboardStep === slides.length - 1) {
-        document.getElementById('onboardNextBtn').textContent = 'Mulai';
+        document.getElementById('onboardNextBtn').innerHTML = 'Mulai ' + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
         document.getElementById('onboardNextBtn').onclick = showLogin;
       }
     } else {
