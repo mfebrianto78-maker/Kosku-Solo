@@ -49,6 +49,19 @@
     return depan.concat(list.filter(k => !k.unggulan));
   }
 
+  // Terapkan daftar promosi ke data kos yang sedang dimuat, lalu gambar ulang Beranda & Cari
+  function terapkan(ids) {
+    tandai(ids);
+    if (!ids.size || !Array.isArray(allKosData)) return;
+    allKosData = utamakan(allKosData);
+    const grid = document.getElementById('dashboardKosGrid');
+    if (grid && allKosData.length && typeof renderKosCard === 'function') {
+      grid.innerHTML = allKosData.slice(0, 4).map(renderKosCard).join('');
+      grid.scrollLeft = 0;
+    }
+    if (typeof renderFilteredKos === 'function') renderFilteredKos();
+  }
+
   const asliLoad = window.loadKosData;
   if (typeof asliLoad === 'function') {
     window.loadKosData = async function () {
@@ -56,21 +69,29 @@
       const r = await asliLoad.apply(this, arguments);
       try {
         const ids = await janji;
-        if (ids) {
-          tandai(ids);
-          if (ids.size && Array.isArray(allKosData)) {
-            allKosData = utamakan(allKosData);
-            const grid = document.getElementById('dashboardKosGrid');
-            if (grid && allKosData.length && typeof renderKosCard === 'function') {
-              grid.innerHTML = allKosData.slice(0, 4).map(renderKosCard).join('');
-            }
-            if (typeof renderFilteredKos === 'function') renderFilteredKos();
-          }
-        }
+        if (ids) terapkan(ids);
       } catch (e) { console.warn('promosi-kos:', e && e.message); }
       return r;
     };
   }
+
+  // Pemuatan data kos PERTAMA (saat aplikasi dibuka) berjalan sebelum file ini terpasang,
+  // jadi tidak melewati pembungkus di atas. Tunggu sampai selesai, lalu terapkan promosi.
+  (async function awal() {
+    try {
+      const ids = await ambilPromoAktif();
+      if (!ids) return;
+      for (let i = 0; i < 60; i++) {                       // maks. ±12 detik
+        let siap = false;
+        try {
+          const grid = document.getElementById('dashboardKosGrid');
+          siap = Array.isArray(allKosData) && allKosData.length > 0 && !!(grid && grid.querySelector('.kk-card2, .kos-card'));
+        } catch (e) { /* belum ada */ }
+        if (siap) { terapkan(ids); return; }
+        await new Promise(r => setTimeout(r, 200));
+      }
+    } catch (e) { console.warn('promosi-kos awal:', e && e.message); }
+  })();
 
   window.KKPromo = { utamakan, aktif: () => aktifIds };
 
