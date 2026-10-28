@@ -36,9 +36,20 @@
 
   // ---------- Util ----------
   function rupiah(n) { try { return formatRupiah(n); } catch (e) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); } }
+  // Tautan bagikan: bila fungsi api/og.js aktif, tautan menampilkan pratinjau foto kos di WhatsApp dkk.
+  let linkKaya = null;   // null = belum dicek
+  async function cekLinkKaya() {
+    if (linkKaya !== null) return linkKaya;
+    try {
+      const r = await fetch(location.origin + '/api/og?ping=1', { cache: 'no-store' });
+      const j = r.ok ? await r.json() : null;
+      linkKaya = !!(j && j.ok);
+    } catch (e) { linkKaya = false; }
+    return linkKaya;
+  }
   function tautanKos(id) {
-    let basis = location.origin + location.pathname;
-    return basis + '?kos=' + encodeURIComponent(id);
+    if (linkKaya) return location.origin + '/api/og?kos=' + encodeURIComponent(id);
+    return location.origin + (location.pathname || '/') + '?kos=' + encodeURIComponent(id);
   }
   function terverifikasi(kos) {
     if (kos.lokasi_terverifikasi) return 'Lokasi Terverifikasi';
@@ -46,16 +57,19 @@
     return '';
   }
   function bangunTeks(kos) {
-    const fas = (kos.fasilitas || []).slice(0, 4).join(' • ');
+    const fas = (kos.fasilitas || []).slice(0, 4).join(', ');
+    let alamat = String(kos.alamat || '').trim();
+    if (alamat.length > 70) alamat = alamat.slice(0, 67).replace(/\s+\S*$/, '') + '…';
     const baris = [
-      '🏠 ' + kos.nama_kos + ' (' + (kos.jenis_kos || 'Kos') + ')',
-      '💰 ' + rupiah(kos.harga_per_bulan) + '/bulan',
-      '📍 ' + (kos.alamat || ''),
+      '*' + kos.nama_kos + '*' + (kos.jenis_kos ? ' (' + kos.jenis_kos + ')' : ''),
+      rupiah(kos.harga_per_bulan) + ' / bulan',
+      '',
+      '📍 ' + alamat,
     ];
-    if (fas) baris.push('✨ ' + fas);
+    if (fas) baris.push('🛏️ ' + fas);
     const v = terverifikasi(kos);
     if (v) baris.push('✅ ' + v);
-    baris.push('', 'Lihat detail & booking langsung di KosKu Solo:', tautanKos(kos.id));
+    baris.push('', 'Lihat foto & booking di KosKu Solo:', tautanKos(kos.id));
     return baris.join('\n');
   }
 
@@ -282,6 +296,7 @@
         font: 700 12.5px 'Plus Jakarta Sans', sans-serif; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
       .kkb-sec button svg { width: 20px; height: 20px; }
       .kkb-sec button.wa { background: #DCFCE7; color: #15803D; }
+      .kkb-hint { margin-top: 10px; font: 500 11.5px/1.45 'Plus Jakarta Sans', sans-serif; color: var(--text-3, #888); }
       .kkb-note { margin-top: 10px; font: 600 12px 'Plus Jakarta Sans', sans-serif; color: #B45309; background: #FEF3C7; border-radius: 12px; padding: 9px 12px; }
       .kkb-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(40px + env(safe-area-inset-bottom, 0px)); z-index: 3100;
         background: rgba(30,30,40,.92); color: #fff; font: 600 13px 'Plus Jakarta Sans', sans-serif; padding: 11px 18px; border-radius: 20px; max-width: 86%; text-align: center; }
@@ -373,10 +388,11 @@
 
   function tutup() { const m = document.getElementById('kkbModal'); if (m) m.remove(); sedangGambar++; }
 
-  function bukaBagikan(kos) {
+  async function bukaBagikan(kos) {
     if (!kos) return;
     pasangCss();
     tutup();
+    await cekLinkKaya();
     kosAktif = kos;
     teksPromo = bangunTeks(kos);
     const nonaktif = kos.status && kos.status !== 'aktif';
@@ -397,10 +413,11 @@
       </div>
       <div class="kkb-lab">Teks promosi (boleh diedit)</div>
       <textarea class="kkb-ta" id="kkbTeks"></textarea>
-      <button class="kkb-main" id="kkbBagikan">${SVG_BAGI.replace('<svg', '<svg width="20" height="20"')}Bagikan gambar &amp; teks</button>
+      <button class="kkb-main" id="kkbBagikan">${SVG_BAGI.replace('<svg', '<svg width="20" height="20"')}Bagikan kartu &amp; teks</button>
+      <div class="kkb-hint">Pilih <b>Bagikan kartu &amp; teks</b> lalu WhatsApp untuk mengirim gambar kartu beserta teksnya. <b>Teks via WA</b> hanya mengirim teks dan tautan.</div>
       <div class="kkb-sec">
         <button id="kkbUnduh">${SVG_UNDUH}Simpan gambar</button>
-        <button id="kkbWa" class="wa">${SVG_WA}WhatsApp</button>
+        <button id="kkbWa" class="wa">${SVG_WA}Teks via WA</button>
         <button id="kkbSalin">${SVG_SALIN}Salin teks</button>
       </div>
     </div>`;
