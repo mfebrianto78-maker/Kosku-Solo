@@ -24,6 +24,7 @@
   const IKON = { Kampus: '🎓', Mal: '🛍️', Pasar: '🧺', Transportasi: '🚉', 'Rumah Sakit': '🏥', Bisnis: '🏢', Wisata: '🏛️', Wilayah: '📍' };
   const URUT_KATEGORI = ['Kampus', 'Mal', 'Transportasi', 'Pasar', 'Rumah Sakit', 'Bisnis', 'Wisata', 'Wilayah'];
 
+  const PIN = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
   const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const norm = t => String(t || '').trim().toLowerCase();
 
@@ -156,7 +157,7 @@
     if (dekat.length || wilSaran.length) {
       const tags = dekat.map(o => o.x.nama_singkat).concat(wilSaran);
       saran.innerHTML = `<div class="kka-saran"><div class="kka-sub">✨ Disarankan untuk lokasi Anda <button id="kkaSemuaSaran" data-t="${esc(tags.join('|'))}">Pilih semua</button></div>
-        <div class="kka-grid">${dekat.map(o => chip(o.x.nama_singkat, (IKON[o.x.kategori] || '📍') + ' ' + esc(o.x.nama_singkat), fmtJarak(o.d))).join('')}${wilSaran.map(w => chip(w, '📍 ' + esc(w))).join('')}</div></div>`;
+        <div class="kka-grid">${dekat.map(o => chip(o.x.nama_singkat, (IKON[o.x.kategori] || '📍') + ' ' + esc(o.x.nama_singkat), fmtJarak(o.d))).join('')}${wilSaran.map(w => chip(w, PIN + ' ' + esc(w))).join('')}</div></div>`;
     } else {
       saran.innerHTML = t ? '' : '<div class="kka-hint" style="background:var(--orange-light);padding:10px 12px;border-radius:12px">💡 Tandai lokasi kos di peta di atas, nanti saya sarankan tempat terdekat secara otomatis.</div>';
     }
@@ -222,6 +223,46 @@
         return;
       }
       return asliSimpan.apply(this, arguments);
+    };
+  }
+
+
+  // ---------- Tampil ke pencari: kartu kos & Detail Kos ----------
+  const css2 = document.createElement('style');
+  css2.textContent = `
+  .kka-dkt{display:flex;align-items:center;gap:5px;margin-top:6px;font-size:12px;font-weight:700;color:var(--orange);line-height:1.3;min-width:0}
+  .kka-dkt svg{flex:none}
+  .kka-dkt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .kka-tag{display:inline-flex;align-items:center;gap:4px;background:var(--orange-light);color:var(--orange);font-weight:700}
+  `;
+  document.head.appendChild(css2);
+
+  const asliKartu = window.renderKosListCard;
+  if (typeof asliKartu === 'function') {
+    window.renderKosListCard = function (kos) {
+      const html = asliKartu.apply(this, arguments);
+      const tags = (kos && kos.area_dekat) || [];
+      if (!tags.length) return html;
+      const teks = tags.slice(0, 2).map(esc).join(' · ') + (tags.length > 2 ? ' +' + (tags.length - 2) : '');
+      return html.replace(/(<div class="kk-addr">[\s\S]*?<\/span><\/div>)/, `$1<div class="kka-dkt">${PIN}<span>Dekat ${teks}</span></div>`);
+    };
+  }
+
+  const asliDetail = window.renderDetailScreen;
+  if (typeof asliDetail === 'function') {
+    window.renderDetailScreen = function (kos) {
+      const r = asliDetail.apply(this, arguments);
+      try {
+        const body = document.querySelector('#screen-detail .detail-body');
+        const row = body && body.querySelector('div[style*="gap:8px"][style*="margin-bottom:16px"]');
+        if (row) {
+          row.querySelectorAll('.kka-tag').forEach(e => e.remove());
+          ((kos && kos.area_dekat) || []).slice(0, 4).forEach(t => {
+            row.insertAdjacentHTML('beforeend', `<div class="fasil-tag kka-tag">${PIN}Dekat ${esc(t)}</div>`);
+          });
+        }
+      } catch (e) { console.warn('area-kos detail:', e); }
+      return r;
     };
   }
 
