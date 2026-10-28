@@ -144,7 +144,7 @@
     let data = [];
     try { data = allKosData || []; } catch (e) { /* belum dimuat */ }
     const q = nilai.toLowerCase();
-    return data.filter(k => ((k.alamat || '').toLowerCase().includes(q)) || ((k.deskripsi || '').toLowerCase().includes(q))).length;
+    return data.filter(k => (window.KKArea && window.KKArea.cocok(k, nilai)) || ((k.alamat || '').toLowerCase().includes(q)) || ((k.deskripsi || '').toLowerCase().includes(q))).length;
   }
 
   function bangunLokasi() {

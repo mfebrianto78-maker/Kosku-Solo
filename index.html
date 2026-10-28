@@ -3692,6 +3692,7 @@ function installPWA() {
             fasilitas: fasilitas,
             latitude: latitude,
             longitude: longitude,
+            ...(window.KKArea && window.KKArea.nilai() !== undefined && { area_dekat: window.KKArea.nilai() }),
             ...(fotoUrls.length > 0 && { foto_urls: fotoUrls })
           })
           .eq('id', editingKosId);
@@ -3711,6 +3712,7 @@ function installPWA() {
             fasilitas: fasilitas,
             latitude: latitude,
             longitude: longitude,
+            ...(window.KKArea && window.KKArea.nilai() !== undefined && { area_dekat: window.KKArea.nilai() }),
             rating: 0,
             jumlah_review: 0,
             status: 'aktif'
@@ -5531,6 +5533,7 @@ function installPWA() {
     // Filter area (cari di alamat kos)
     if (activeArea) {
       hasil = hasil.filter(k =>
+        (window.KKArea && window.KKArea.cocok(k, activeArea)) ||
         k.alamat.toLowerCase().includes(activeArea.toLowerCase()) ||
         (k.deskripsi || '').toLowerCase().includes(activeArea.toLowerCase())
       );
@@ -6979,5 +6982,6 @@ function installPWA() {
 <script src="bagikan-kos.js"></script>
 <script src="statistik-kos.js"></script>
 <script src="ulasan-pemilik.js"></script>
+<script src="area-kos.js"></script>
 </body>
 </html>
