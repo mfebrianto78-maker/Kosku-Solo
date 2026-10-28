@@ -4157,11 +4157,11 @@ function installPWA() {
       dbBanners = (data || []).filter(b => b.gambar_url);
     } catch (err) { /* gagal load db banner, tetap pakai statis */ }
 
-    // Gabungkan: banner DB di depan, statis di belakang
-    const allBanners = [
-      ...dbBanners.map(b => ({ img: b.gambar_url, alt: b.nama || 'Banner Promo', link: b.link_tujuan })),
-      ...staticBanners,
-    ];
+    // Kalau admin punya banner aktif, hanya banner admin yang tampil.
+    // Banner bawaan hanya dipakai sebagai cadangan saat belum ada banner dari admin.
+    const allBanners = dbBanners.length
+      ? dbBanners.map(b => ({ img: b.gambar_url, alt: b.nama || 'Banner Promo', link: b.link_tujuan }))
+      : staticBanners;
 
     // Acak urutan
     for (let i = allBanners.length - 1; i > 0; i--) {
