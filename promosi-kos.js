@@ -135,6 +135,7 @@
   // =====================================================
   const TAB_LAIN = ['stats', 'banner', 'kos', 'users', 'tempat'];
   let data = [];
+  let antre = [];       // pengajuan dari pemilik yang menunggu
   let saring = 'aktif';
 
   function toast(t) {
@@ -226,12 +227,32 @@
         .select('*, kos(nama_kos, alamat)').order('selesai', { ascending: false });
       if (error) throw error;
       data = rows || [];
+      await muatAntrean();
       gambarPanel();
     } catch (err) {
       const belum = /relation|does not exist|schema cache|promosi_kos/i.test((err && err.message) || '');
       el.innerHTML = `<div style="text-align:center;padding:40px 16px;color:#DC2626;font-size:13px;line-height:1.5">
         ${belum ? 'Tabel promosi belum dibuat. Jalankan file promosi-kos.sql di Supabase → SQL Editor.' : 'Gagal memuat: ' + esc(err && err.message)}</div>`;
     }
+  }
+
+  // Pengajuan dari pemilik (Tahap 2). Bila tabelnya belum ada, abaikan saja.
+  async function muatAntrean() {
+    antre = [];
+    try {
+      const { data: rows, error } = await sbClient.from('promosi_pengajuan')
+        .select('*, kos(nama_kos, alamat)').eq('status', 'menunggu').order('created_at', { ascending: true });
+      if (error) throw error;
+      antre = rows || [];
+      if (antre.length) {
+        const ids = [...new Set(antre.map(a => a.pemilik_id))];
+        const { data: pr } = await sbClient.from('profiles').select('id, nama_lengkap').in('id', ids);
+        const peta = {}; (pr || []).forEach(p => { peta[p.id] = p; });
+        antre.forEach(a => { a.pemilik = peta[a.pemilik_id]; });
+      }
+    } catch (e) { antre = []; }
+    const t = document.getElementById('tab-promosi');
+    if (t) t.textContent = '⭐ Promosi' + (antre.length ? ' (' + antre.length + ')' : '');
   }
 
   function gambarPanel() {
@@ -248,6 +269,15 @@
           <div style="font-size:11.5px;color:#6B7280">Kos unggulan tampil paling atas di Beranda &amp; Cari</div></div>
         <button class="kkpa-add" onclick="kkpBukaForm()">+ Tambah</button>
       </div>
+      ${antre.length ? `<div style="font-size:13.5px;font-weight:800;margin:4px 0 8px">📥 Pengajuan dari pemilik (${antre.length})</div>` + antre.map(a => `
+        <div class="kkpa-row" style="border:2px solid #FCD34D">
+          <div class="kkpa-top"><b>${esc((a.kos && a.kos.nama_kos) || 'Kos')}</b><span class="st jadwal">${a.durasi_hari} hari</span></div>
+          <div class="kkpa-meta">👤 ${esc((a.pemilik && a.pemilik.nama_lengkap) || 'Pemilik')} · diajukan ${tglPendek(a.created_at)}</div>
+          ${a.pesan ? `<div class="kkpa-cat">💬 ${esc(a.pesan)}</div>` : ''}
+          <div class="kkpa-act">
+            <button style="background:var(--orange);border-color:var(--orange);color:#fff" onclick="kkpSetujui('${esc(a.id)}')">Setujui &amp; Tayangkan</button>
+            <button class="del" onclick="kkpTolak('${esc(a.id)}')">Tolak</button>
+          </div></div>`).join('') + '<div style="height:6px"></div>' : ''}
       <div class="kkpa-slot ${penuh ? 'penuh' : ''}"><b>Slot terisi: ${aktif.length} / ${MAKS_SLOT}</b><br>${penuh ? 'Slot penuh. Menambah lagi membuat tiap kos kurang menonjol.' : 'Masih ada ' + (MAKS_SLOT - aktif.length) + ' slot kosong yang bisa dijual.'}</div>
       <div class="kkpa-chips">${['aktif', 'jadwal', 'selesai', 'semua'].map(k => `<button class="${saring === k ? 'on' : ''}" data-k="${k}">${label[k]}${k !== 'semua' ? ' (' + jml[k] + ')' : ''}</button>`).join('')}</div>
       ${daftar.length ? daftar.map(p => {
@@ -306,6 +336,53 @@
       await muatPanel();
       refresh();
     } catch (e) { toast('Gagal: ' + (e && e.message)); }
+  };
+
+  window.kkpSetujui = function (id) {
+    const a = antre.find(x => x.id === id); if (!a || document.getElementById('kkpModal')) return;
+    const m = document.createElement('div');
+    m.id = 'kkpModal';
+    m.innerHTML = `<div class="box">
+      <h3>Setujui Pengajuan</h3>
+      <div class="ring">${esc((a.kos && a.kos.nama_kos) || 'Kos')} · ${a.durasi_hari} hari<br>Pemilik: ${esc((a.pemilik && a.pemilik.nama_lengkap) || '-')}${a.pesan ? '<br>Pesan: ' + esc(a.pesan) : ''}</div>
+      <label>Mulai tayang</label>
+      <input type="date" id="kkpSMulai" value="${tglInput(new Date())}">
+      <label>Catatan pribadi admin (pembayaran, dll.)</label>
+      <textarea id="kkpSCat" maxlength="300" placeholder="Contoh: Lunas transfer BCA 28/10, Rp 150.000"></textarea>
+      <div class="err" id="kkpSErr"></div>
+      <div class="btns"><button id="kkpSBatal">Batal</button><button class="ok" id="kkpSOk">Setujui</button></div></div>`;
+    document.body.appendChild(m);
+    m.querySelector('#kkpSBatal').addEventListener('click', () => m.remove());
+    m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+    m.querySelector('#kkpSOk').addEventListener('click', async () => {
+      const btn = m.querySelector('#kkpSOk'), err = m.querySelector('#kkpSErr');
+      const tgl = m.querySelector('#kkpSMulai').value;
+      if (!tgl) { err.textContent = 'Tanggal mulai wajib diisi.'; err.style.display = 'block'; return; }
+      btn.disabled = true; btn.textContent = 'Memproses...';
+      try {
+        const { error } = await sbClient.rpc('kk_proses_pengajuan', {
+          p_id: id, p_setuju: true, p_mulai: new Date(tgl + 'T00:00:00').toISOString(),
+          p_catatan: m.querySelector('#kkpSCat').value.trim() || null, p_alasan: null
+        });
+        if (error) throw error;
+        m.remove(); toast('Disetujui. Promosi sudah dijadwalkan.');
+        await muatPanel(); refresh();
+      } catch (e) {
+        btn.disabled = false; btn.textContent = 'Setujui';
+        err.textContent = 'Gagal: ' + ((e && e.message) || 'coba lagi'); err.style.display = 'block';
+      }
+    });
+  };
+
+  window.kkpTolak = async function (id) {
+    const alasan = prompt('Alasan penolakan (akan terlihat oleh pemilik):', 'Slot promosi sedang penuh');
+    if (alasan === null) return;
+    try {
+      const { error } = await sbClient.rpc('kk_proses_pengajuan', { p_id: id, p_setuju: false, p_mulai: null, p_catatan: null, p_alasan: alasan });
+      if (error) throw error;
+      toast('Pengajuan ditolak.');
+      await muatPanel();
+    } catch (e) { toast('Gagal: ' + ((e && e.message) || 'coba lagi')); }
   };
 
   // Muat ulang tanda "Unggulan" setelah admin mengubah promosi
