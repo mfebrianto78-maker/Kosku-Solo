@@ -249,4 +249,81 @@
     if (stat && stat.nextSibling) grid.insertBefore(k, stat.nextSibling); else grid.appendChild(k);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasangMenu); else pasangMenu();
+
+  // =====================================================
+  // Kartu promosi yang menonjol di Beranda Pemilik
+  // =====================================================
+  const css2 = document.createElement('style');
+  css2.textContent = `
+  #kkqBeranda{flex:none;margin:6px 16px 18px;border-radius:20px;padding:18px 16px;color:#fff;position:relative;overflow:hidden;cursor:pointer;
+    background:linear-gradient(125deg,#F59E0B 0%,#FF7A00 60%,#EA580C 100%);box-shadow:0 8px 22px rgba(255,122,0,.35);display:flex;align-items:center;gap:14px}
+  #kkqBeranda::before{content:'';position:absolute;right:-30px;top:-34px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.14)}
+  #kkqBeranda::after{content:'';position:absolute;right:50px;bottom:-46px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.1)}
+  #kkqBeranda .ik{flex:none;width:58px;height:58px;border-radius:18px;background:#fff;color:#F59E0B;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.15);position:relative;z-index:1}
+  #kkqBeranda .tx{flex:1;min-width:0;position:relative;z-index:1}
+  #kkqBeranda .tx b{display:block;font-size:17px;font-weight:800;line-height:1.25}
+  #kkqBeranda .tx span{display:block;font-size:12px;opacity:.95;margin-top:4px;line-height:1.45}
+  #kkqBeranda .cta{display:inline-block;margin-top:10px;background:#fff;color:#EA580C;font:800 12.5px 'Plus Jakarta Sans',sans-serif;padding:8px 14px;border-radius:20px}
+  #kkqBeranda:active{transform:scale(.985)}
+  `;
+  document.head.appendChild(css2);
+
+  const BINTANG_BESAR = BINTANG.replace('width="26" height="26"', 'width="32" height="32"').replace('fill="none"', 'fill="currentColor"');
+
+  function isiKartu(judul, sub, cta) {
+    const k = document.getElementById('kkqBeranda'); if (!k) return;
+    k.innerHTML = `<div class="ik">${BINTANG_BESAR}</div><div class="tx"><b>${judul}</b><span>${sub}</span><div class="cta">${cta} →</div></div>`;
+  }
+
+  function pasangKartuBeranda() {
+    const grid = document.querySelector('#screen-owner .owner-menu-grid');
+    if (!grid) return;
+    let k = document.getElementById('kkqBeranda');
+    if (!k) {
+      k = document.createElement('div');
+      k.id = 'kkqBeranda';
+      k.addEventListener('click', () => window.showPromosiSaya());
+      const judulMenu = grid.previousElementSibling;
+      (judulMenu || grid).parentNode.insertBefore(k, judulMenu || grid);
+      isiKartu('Promosikan Kos Anda', 'Tampil di urutan teratas Beranda &amp; hasil pencarian dengan label ⭐ Unggulan.', 'Ajukan Promosi');
+    }
+    return k;
+  }
+
+  async function segarkanKartu() {
+    const k = pasangKartuBeranda(); if (!k) return;
+    const punyaKos = ((typeof myKosData !== 'undefined' ? myKosData : []) || []).length > 0;
+    k.style.display = punyaKos ? 'flex' : 'none';
+    if (!punyaKos) return;
+    try {
+      const [a, c] = await Promise.all([
+        sbClient.rpc('kk_promosi_saya'),
+        sbClient.from('promosi_pengajuan').select('kos_id,status,alasan,created_at').order('created_at', { ascending: false }).limit(20)
+      ]);
+      if (a.error || c.error) return;               // fitur belum aktif: tetap tampilkan ajakan
+      const now = Date.now();
+      const tayang = (a.data || []).filter(p => Date.parse(p.mulai) <= now && Date.parse(p.selesai) > now);
+      const tunggu = (c.data || []).filter(p => p.status === 'menunggu');
+      if (tayang.length) {
+        const sisa = Math.max(0, Math.ceil((Math.min.apply(null, tayang.map(p => Date.parse(p.selesai))) - now) / HARI));
+        isiKartu('Kos Anda sedang Unggulan', `${tayang.length} kos tayang di urutan teratas · sisa ${sisa} hari. Lihat hasilnya dan perpanjang kapan saja.`, 'Lihat Hasil');
+      } else if (tunggu.length) {
+        isiKartu('Pengajuan sedang diproses', `${tunggu.length} pengajuan menunggu persetujuan admin. Anda akan dapat notifikasi saat ada keputusan.`, 'Lihat Status');
+      } else {
+        const tolak = (c.data || []).find(p => p.status === 'ditolak' && now - Date.parse(p.created_at) < 14 * HARI);
+        isiKartu('Promosikan Kos Anda', tolak ? 'Pengajuan terakhir belum disetujui. Anda bisa mengajukan lagi kapan saja.' : 'Tampil di urutan teratas Beranda &amp; hasil pencarian dengan label ⭐ Unggulan.', 'Ajukan Promosi');
+      }
+    } catch (e) { /* biarkan ajakan bawaan */ }
+  }
+
+  const asliMuatKos = window.loadMyKos;
+  if (typeof asliMuatKos === 'function') {
+    window.loadMyKos = async function () {
+      const r = await asliMuatKos.apply(this, arguments);
+      try { segarkanKartu(); } catch (e) { /* abaikan */ }
+      return r;
+    };
+  }
+  const mulaiKartu = () => { pasangKartuBeranda(); try { if (typeof myKosData !== 'undefined' && myKosData && myKosData.length) segarkanKartu(); } catch (e) { /* abaikan */ } };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mulaiKartu); else mulaiKartu();
 })();
