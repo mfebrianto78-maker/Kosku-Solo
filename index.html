@@ -2725,7 +2725,8 @@ function installPWA() {
         jumlah, untuk_periode: periode, tanggal_bayar: tanggal, metode_bayar: metode, catatan,
         nama_penyewa: namaPenyewaInput || b.nama_pemesan,
         nama_kos: namaKosInput,
-        nomor_kamar: kamarInput || (b.kamar && b.kamar.nomor_kamar) || '-'
+        nomor_kamar: kamarInput || (b.kamar && b.kamar.nomor_kamar) || '-',
+        kos_id: b.kos_id, no_hp: b.no_hp, nama_pemesan: b.nama_pemesan
       });
     } catch (err) {
       console.error('Gagal membuat kwitansi:', err);
@@ -2779,7 +2780,8 @@ function installPWA() {
       catatan: kw.catatan,
       nama_penyewa: b.nama_pemesan || (currentUserProfile && currentUserProfile.nama_lengkap) || '-',
       nama_kos: (b.kos && b.kos.nama_kos) || 'Kos',
-      nomor_kamar: (b.kamar && b.kamar.nomor_kamar) || '-'
+      nomor_kamar: (b.kamar && b.kamar.nomor_kamar) || '-',
+      kos_id: b.kos_id, no_hp: b.no_hp, nama_pemesan: b.nama_pemesan
     });
   }
 

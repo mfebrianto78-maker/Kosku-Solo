@@ -703,6 +703,78 @@
       `Terima kasih 🙏\nKwitansi digital — ${kw.nama_kos || 'KosKu Solo'} (via KosKu Solo)`;
   }
 
+  // ---------- Pilih nomor tujuan kwitansi ----------
+  async function pilihTujuanWA(kw) {
+    const milikku = waNumber(currentUserProfile && currentUserProfile.no_hp);
+    const kand = [];
+    const tambah = (label, nama, hp) => {
+      const n = waNumber(hp);
+      if (!n || kand.some(c => c.n === n)) return;
+      kand.push({ label, nama, n, hp, sendiri: n === milikku });
+    };
+    // 1. Penghuni kamar tsb (data Kelola Kamar / Catatan Sewa)
+    try {
+      if (kw.kos_id && kw.nomor_kamar) {
+        const { data } = await sbClient.from('catatan_sewa').select('nama_penghuni, nomor_kamar, no_hp_penghuni, status')
+          .eq('kos_id', kw.kos_id).in('status', ['aktif', 'menunggak']).order('created_at', { ascending: false });
+        const p = (data || []).find(c => String(c.nomor_kamar || '').toLowerCase() === String(kw.nomor_kamar).toLowerCase() && c.no_hp_penghuni);
+        if (p) tambah('Penghuni kamar ' + kw.nomor_kamar, p.nama_penghuni, p.no_hp_penghuni);
+      }
+    } catch (e) { /* abaikan */ }
+    // 2. Nomor yang tercatat di booking
+    tambah('Nomor di data booking', kw.nama_pemesan || kw.nama_penyewa, kw.no_hp);
+
+    const pilihIdx = kand.findIndex(c => !c.sendiri);
+    let dipilih = pilihIdx >= 0 ? pilihIdx : -1;   // -1 = nomor lain
+    const old = document.getElementById('kkTujuanWA'); if (old) old.remove();
+    const m = document.createElement('div');
+    m.id = 'kkTujuanWA';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1100;display:flex;align-items:flex-end;justify-content:center';
+    const baris = (c, i) => `
+      <label style="display:flex;gap:10px;align-items:center;padding:12px;border:1.5px solid var(--border);border-radius:12px;margin-bottom:8px;cursor:pointer">
+        <input type="radio" name="kkTuj" value="${i}" ${i === dipilih ? 'checked' : ''} style="accent-color:#25D366">
+        <span style="flex:1;min-width:0"><b style="font-size:13px;display:block">${esc(c.nama || '-')}</b>
+          <span style="font-size:12px;color:var(--text-3)">${esc(c.label)} · ${esc(c.hp)}${c.sendiri ? ' <b style="color:#DC2626">(nomor Anda sendiri)</b>' : ''}</span></span>
+      </label>`;
+    m.innerHTML = `
+      <div style="background:var(--card,#fff);border-radius:18px 18px 0 0;padding:18px 16px 22px;width:100%;max-width:430px;max-height:88vh;overflow-y:auto">
+        <div style="font-size:15px;font-weight:800;margin-bottom:4px">Kirim kwitansi ke siapa?</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:12px">Kwitansi atas nama <b>${esc(kw.nama_penyewa || '-')}</b>. Pilih nomor WhatsApp tujuannya.</div>
+        ${kand.map(baris).join('')}
+        <label style="display:flex;gap:10px;align-items:center;padding:12px;border:1.5px solid var(--border);border-radius:12px;margin-bottom:8px;cursor:pointer">
+          <input type="radio" name="kkTuj" value="-1" ${dipilih === -1 ? 'checked' : ''} style="accent-color:#25D366">
+          <span style="flex:1"><b style="font-size:13px;display:block">Nomor lain</b>
+            <input id="kkTujLain" type="tel" placeholder="08xx-xxxx-xxxx" style="width:100%;margin-top:6px;padding:9px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;box-sizing:border-box;background:var(--bg)"></span>
+        </label>
+        <label style="display:flex;gap:10px;align-items:center;padding:12px;border:1.5px solid var(--border);border-radius:12px;margin-bottom:14px;cursor:pointer">
+          <input type="radio" name="kkTuj" value="-2" style="accent-color:#25D366">
+          <span style="font-size:13px;font-weight:700">Buka WhatsApp, pilih kontak sendiri</span>
+        </label>
+        <div style="display:flex;gap:10px">
+          <button id="kkTujBatal" style="flex:1;padding:13px;border:0;border-radius:12px;background:var(--bg);font-weight:800;font-size:14px;cursor:pointer;color:var(--text)">Batal</button>
+          <button id="kkTujKirim" style="flex:1;padding:13px;border:0;border-radius:12px;background:#25D366;color:#fff;font-weight:800;font-size:14px;cursor:pointer">Kirim</button>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+    ['focus', 'input'].forEach(ev => m.querySelector('#kkTujLain').addEventListener(ev, () => {
+      const r = m.querySelector('input[name="kkTuj"][value="-1"]'); if (r) r.checked = true;
+    }));
+    m.querySelector('#kkTujBatal').onclick = () => m.remove();
+    m.querySelector('#kkTujKirim').onclick = () => {
+      const v = Number((m.querySelector('input[name="kkTuj"]:checked') || {}).value);
+      let hp = '';
+      if (v >= 0 && kand[v]) hp = kand[v].hp;
+      else if (v === -1) {
+        hp = m.querySelector('#kkTujLain').value.trim();
+        if (waNumber(hp).length < 9) { alert('Isi nomor WhatsApp tujuan dengan benar.'); return; }
+      }
+      if (v >= 0 && kand[v] && kand[v].sendiri && !confirm('Ini nomor Anda sendiri. Tetap kirim ke nomor ini?')) return;
+      m.remove();
+      openWA(hp, kwitansiText(kw));
+    };
+  }
+
   const origRenderKwitansi = window.renderKwitansiReceipt;
   if (typeof origRenderKwitansi === 'function') {
     window.renderKwitansiReceipt = function (kw) {
@@ -715,16 +787,10 @@
       const closeBtn = modal.querySelector('button');
       if (!closeBtn) return;
 
-      let hp = '';
-      try { hp = (typeof _kwitansiBookingCache !== 'undefined' && _kwitansiBookingCache && _kwitansiBookingCache.no_hp) || ''; } catch (e) { /* abaikan */ }
-
       const btn = document.createElement('button');
       btn.style.cssText = 'width:100%;padding:12px;background:#25D366;border:none;border-radius:10px;color:white;font-weight:700;font-size:13px;margin-top:16px;cursor:pointer';
       btn.textContent = '💬 Kirim Kwitansi ke WhatsApp';
-      btn.onclick = function () {
-        if (!hp && !confirm('No. HP penyewa tidak ditemukan. Buka WhatsApp dan pilih kontaknya sendiri?')) return;
-        openWA(hp, kwitansiText(kw));
-      };
+      btn.onclick = function () { pilihTujuanWA(kw); };
       closeBtn.parentNode.insertBefore(btn, closeBtn);
       closeBtn.style.marginTop = '10px';
     };
