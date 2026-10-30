@@ -775,23 +775,154 @@
     };
   }
 
+  // ---------- Kwitansi sebagai gambar (tanpa screenshot) ----------
+  function muatGambar(src) {
+    return new Promise(res => {
+      const im = new Image();
+      im.onload = () => res(im);
+      im.onerror = () => res(null);
+      im.src = src;
+    });
+  }
+
+  async function buatGambarKwitansi(kw) {
+    try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) { /* abaikan */ }
+    const [logo, wm] = await Promise.all([muatGambar('images/logo-icon.png'), muatGambar('images/logo-watermark.png')]);
+    const S = 2, W = 380 * S, PAD = 24 * S, FONT = "'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif";
+    const tgl = kw.tanggal_bayar
+      ? new Date(kw.tanggal_bayar + (String(kw.tanggal_bayar).length <= 10 ? 'T00:00:00' : '')).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '-';
+    const baris = [
+      ['Diterima dari', kw.nama_penyewa || '-'],
+      ['Kos / Kamar', (kw.nama_kos || '-') + ' / ' + (kw.nomor_kamar || '-')],
+      ['Untuk', kw.untuk_periode || '-'],
+      ['Tanggal', tgl],
+      ['Metode', kw.metode_bayar || '-']
+    ];
+    const ukur = document.createElement('canvas').getContext('2d');
+    const bungkus = (ctx, teks, font, maks) => {
+      ctx.font = font;
+      const kata = String(teks).split(/\s+/), out = []; let cur = '';
+      kata.forEach(w => {
+        const t = cur ? cur + ' ' + w : w;
+        if (ctx.measureText(t).width > maks && cur) { out.push(cur); cur = w; } else cur = t;
+      });
+      if (cur) out.push(cur);
+      return out.length ? out : [''];
+    };
+    const fVal = `800 ${13 * S}px ${FONT}`, fLab = `500 ${13 * S}px ${FONT}`;
+    const lineH = 28 * S;
+    const isi = baris.map(([l, v]) => ({ l, lines: bungkus(ukur, v, fVal, (W - 2 * PAD) * 0.6) }));
+    const catLines = kw.catatan ? bungkus(ukur, '"' + kw.catatan + '"', `italic 500 ${12 * S}px ${FONT}`, W - 2 * PAD) : [];
+    const footLines = bungkus(ukur, 'Kwitansi digital ini sah tanpa tanda tangan basah — KosKu Solo', `500 ${11 * S}px ${FONT}`, W - 2 * PAD);
+
+    let H = PAD + 38 * S + 6 * S + 22 * S + 16 * S + 14 * S + 16 * S; // kepala
+    isi.forEach(r => { H += Math.max(1, r.lines.length) * lineH; });
+    H += catLines.length ? 10 * S + catLines.length * 17 * S : 0;
+    H += 16 * S + 16 * S + 30 * S;                // total
+    H += 16 * S + footLines.length * 16 * S + PAD;
+
+    const c = document.createElement('canvas'); c.width = W; c.height = Math.ceil(H);
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, W, c.height);
+    if (wm) {                                       // watermark di tengah
+      const lw = Math.min(280 * S, W * 0.7), lh = lw * wm.height / wm.width;
+      g.save(); g.globalAlpha = 0.15; try { g.filter = 'invert(1)'; } catch (e) { /* abaikan */ }
+      g.drawImage(wm, (W - lw) / 2, (c.height - lh) / 2, lw, lh); g.restore();
+    }
+    const garis = y => { g.save(); g.strokeStyle = '#D1D5DB'; g.lineWidth = 2 * S; g.setLineDash([6 * S, 5 * S]); g.beginPath(); g.moveTo(PAD, y); g.lineTo(W - PAD, y); g.stroke(); g.restore(); };
+    let y = PAD;
+    g.textBaseline = 'alphabetic';
+    if (logo) {
+      const r = 8 * S, x = (W - 38 * S) / 2;
+      g.save(); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + 38 * S, y, x + 38 * S, y + 38 * S, r); g.arcTo(x + 38 * S, y + 38 * S, x, y + 38 * S, r); g.arcTo(x, y + 38 * S, x, y, r); g.arcTo(x, y, x + 38 * S, y, r); g.closePath(); g.clip();
+      g.drawImage(logo, x, y, 38 * S, 38 * S); g.restore();
+    }
+    y += 38 * S + 6 * S + 18 * S;
+    g.fillStyle = '#111827'; g.textAlign = 'center'; g.font = `800 ${16 * S}px ${FONT}`;
+    g.fillText('KWITANSI PEMBAYARAN', W / 2, y);
+    y += 20 * S;
+    g.fillStyle = '#9CA3AF'; g.font = `500 ${11 * S}px ${FONT}`;
+    g.fillText(String(kw.nomor_kwitansi || ''), W / 2, y);
+    y += 16 * S; garis(y); y += 14 * S;
+
+    isi.forEach(r => {
+      const n = Math.max(1, r.lines.length);
+      g.textAlign = 'left'; g.fillStyle = '#9CA3AF'; g.font = fLab;
+      g.fillText(r.l, PAD, y + 19 * S);
+      g.textAlign = 'right'; g.fillStyle = '#111827'; g.font = fVal;
+      r.lines.forEach((t, i) => g.fillText(t, W - PAD, y + 19 * S + i * lineH));
+      y += n * lineH;
+    });
+    if (catLines.length) {
+      y += 10 * S; g.textAlign = 'left'; g.fillStyle = '#9CA3AF'; g.font = `italic 500 ${12 * S}px ${FONT}`;
+      catLines.forEach((t, i) => g.fillText(t, PAD, y + 12 * S + i * 17 * S));
+      y += catLines.length * 17 * S;
+    }
+    y += 16 * S; garis(y); y += 16 * S;
+    g.textAlign = 'left'; g.fillStyle = '#111827'; g.font = `800 ${13 * S}px ${FONT}`;
+    g.fillText('Total Dibayar', PAD, y + 22 * S);
+    g.textAlign = 'right'; g.fillStyle = '#FF7A00'; g.font = `800 ${20 * S}px ${FONT}`;
+    g.fillText(formatRupiah(kw.jumlah || 0), W - PAD, y + 22 * S);
+    y += 30 * S + 16 * S;
+    g.textAlign = 'center'; g.fillStyle = '#9CA3AF'; g.font = `500 ${11 * S}px ${FONT}`;
+    footLines.forEach((t, i) => g.fillText(t, W / 2, y + 12 * S + i * 16 * S));
+    return await new Promise(res => c.toBlob(res, 'image/png'));
+  }
+
+  async function kirimGambarKwitansi(kw, tombol) {
+    const label = tombol.textContent;
+    tombol.disabled = true; tombol.textContent = 'Membuat gambar…';
+    try {
+      const blob = await buatGambarKwitansi(kw);
+      if (!blob) throw new Error('gagal membuat gambar');
+      const nama = 'Kwitansi-' + String(kw.nomor_kwitansi || 'KosKu').replace(/[^A-Za-z0-9._-]+/g, '-') + '.png';
+      const file = new File([blob], nama, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: 'Kwitansi Pembayaran' }); }
+        catch (e) { if (e && e.name !== 'AbortError') throw e; }
+      } else {
+        const a = document.createElement('a');           // cadangan: unduh ke galeri
+        a.href = URL.createObjectURL(blob); a.download = nama;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        alert('Kwitansi tersimpan sebagai gambar di HP Anda (folder Unduhan). Kirim lewat WhatsApp dari galeri.');
+      }
+    } catch (e) {
+      console.error('Kwitansi gambar:', e);
+      alert('Gagal membuat gambar kwitansi, coba lagi.');
+    }
+    tombol.disabled = false; tombol.textContent = label;
+  }
+
   const origRenderKwitansi = window.renderKwitansiReceipt;
   if (typeof origRenderKwitansi === 'function') {
     window.renderKwitansiReceipt = function (kw) {
       origRenderKwitansi.apply(this, arguments);
 
-      // Tombol WA hanya untuk pemilik kos
-      if (!(currentUserProfile && currentUserProfile.role === 'pemilik')) return;
       const modal = document.getElementById('kwitansiReceiptModal');
       if (!modal) return;
       const closeBtn = modal.querySelector('button');
       if (!closeBtn) return;
+      closeBtn.textContent = 'Tutup';
 
-      const btn = document.createElement('button');
-      btn.style.cssText = 'width:100%;padding:12px;background:#25D366;border:none;border-radius:10px;color:white;font-weight:700;font-size:13px;margin-top:16px;cursor:pointer';
-      btn.textContent = '💬 Kirim Kwitansi ke WhatsApp';
-      btn.onclick = function () { pilihTujuanWA(kw); };
-      closeBtn.parentNode.insertBefore(btn, closeBtn);
+      const mulai = closeBtn.parentNode;
+      const pemilik = !!(currentUserProfile && currentUserProfile.role === 'pemilik');
+
+      const gbr = document.createElement('button');
+      gbr.style.cssText = 'width:100%;padding:12px;background:#FF7A00;border:none;border-radius:10px;color:white;font-weight:700;font-size:13px;margin-top:16px;cursor:pointer';
+      gbr.textContent = 'Kirim sebagai Gambar';
+      gbr.onclick = function () { kirimGambarKwitansi(kw, gbr); };
+      mulai.insertBefore(gbr, closeBtn);
+
+      // Tombol WA (teks, langsung ke nomor tujuan) hanya untuk pemilik kos
+      if (pemilik) {
+        const btn = document.createElement('button');
+        btn.style.cssText = 'width:100%;padding:12px;background:#25D366;border:none;border-radius:10px;color:white;font-weight:700;font-size:13px;margin-top:10px;cursor:pointer';
+        btn.textContent = '💬 Kirim Teks ke WhatsApp';
+        btn.onclick = function () { pilihTujuanWA(kw); };
+        mulai.insertBefore(btn, closeBtn);
+      }
       closeBtn.style.marginTop = '10px';
     };
   }
